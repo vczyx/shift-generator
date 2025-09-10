@@ -12,7 +12,7 @@ import {
 
 export default function Editor() {
   useEffect(() => {
-    console.log(getRestTime({ start: 9, end: 18 }));
+    console.log(getRestTime({ start: 17, end: 20 }));
   }, []);
   return <div className="editorview"></div>;
 }

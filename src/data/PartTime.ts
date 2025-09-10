@@ -32,7 +32,7 @@ export function getRestTime(pt: PartTime): number {
   // 계산된 휴게 시간이 0이면 경고 출력
   if (restTimeTotal === 0) {
     console.warn(
-      `couldn't calc resttime : ${getTotalTime(pt)}. please check resttime config.`
+      `Couldn't calculate the rest time(${getTotalTime(pt)}). Please check the rest time configuration.`
     );
   }
 
@@ -55,4 +55,14 @@ export function getWorkTime(pt: PartTime): number {
  */
 export function getTotalTime(pt: PartTime): number {
   return pt.end - pt.start;
+}
+
+/**
+ * PartTime이 해당 시간에 근무 중인지에 대한 여부를 가져옵니다.
+ * @param pt 근무 파트
+ * @param hour 시간
+ * @returns 해당 시간에 근무 중인지에 대한 여부
+ */
+export function isWorking(pt: PartTime, hour: number) {
+  return hour >= pt.start && hour <= pt.end;
 }
