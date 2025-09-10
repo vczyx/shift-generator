@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { currentConfig } from "../data/Config";
-import { PartTime, getRestTime } from "../data/PartTime";
+import { PartTimeF } from "../data/PartTime";
 import "../styles/Editor.css";
 
 import {
@@ -9,10 +9,12 @@ import {
   DropResult,
   Droppable,
 } from "react-beautiful-dnd";
+import { ShiftF } from "../data/Shift";
+import { TestWorker } from "../test/TestData";
 
 export default function Editor() {
   useEffect(() => {
-    console.log(getRestTime({ start: 17, end: 20 }));
+    console.log(ShiftF.getWorkDuration(TestWorker));
   }, []);
   return <div className="editorview"></div>;
 }

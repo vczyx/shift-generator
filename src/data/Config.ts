@@ -1,5 +1,5 @@
 import { OperationSymbol } from "../utils/util";
-import TestData from "../test/TestData";
+import { TestConfig } from "../test/TestData";
 
 export interface RestrauntConfig {
   /**
@@ -69,4 +69,4 @@ export interface Config {
 /**
  * 현재 환경 설정을 가져옵니다.
  */
-export let currentConfig: Config = TestData;
+export let currentConfig: Config = TestConfig;
