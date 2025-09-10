@@ -8,6 +8,9 @@ export interface PartTime {
   end: number;
 }
 
+/**
+ * PartTime 데이터와 관련된 확장 함수들을 제공합니다.
+ */
 export const PartTimeF = {
   /**
    * PartTime의 휴게 시간을 가져옵니다.

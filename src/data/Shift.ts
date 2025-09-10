@@ -153,9 +153,21 @@ export interface Week {
 }
 
 export interface Shift {
+  /**
+   * 주간 데이터
+   */
   week: Week;
+
+  /**
+   * 근무자 데이터
+   */
+  workers: { [workerId: number]: Worker };
 }
 
+
+/**
+ * Shift 데이터와 관련된 확장 함수들을 제공합니다.
+ */
 export const ShiftF = {
   /**
    * 해당 근무자의 근속 기한을 가져옵니다.
@@ -171,6 +183,7 @@ export const ShiftF = {
    */
   getWorkDuration: (w: Worker, format: string = "[yy]년 [mm]개월"): string => {
     let duration: Duration;
+    // 실제 데이터를 결과로 반환하기 위해, 필터링 문자열과 getter 구현
     const formatSet = {
       "[yy]": () => `${duration?.years ?? "0"}`,
       "[mm]": () => `${duration?.months ?? "0"}`,
@@ -180,11 +193,16 @@ export const ShiftF = {
       "[m]": () => `${duration?.minutes ?? "0"}`,
       "[s]": () => `${duration?.seconds ?? "0"}`,
     };
+
     const now = new Date();
+
+    // 만약 지금 날짜가 입사일 이후 일 경우 (이전일 경우 0을 반환하기 위해서)
     if (isAfter(now, w.joinDate)) {
       duration = intervalToDuration({ start: w.joinDate, end: now });
     }
-    return util.formater(format, formatSet);
+
+    // 데이터 filtering 후 반환
+    return util.formatFilterer(format, formatSet);
   },
 
   /**
@@ -193,6 +211,7 @@ export const ShiftF = {
    * @returns 보건증 잔여일
    */
   getHealthCertDaysLeft: (w: Worker): number => {
+    // 현재 날짜 - 보건증 만기일
     return differenceInDays(w.healthCertExpiryDate, new Date());
   },
 };
