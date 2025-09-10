@@ -1,4 +1,9 @@
-import { intervalToDuration, Duration, isAfter } from "date-fns";
+import {
+  intervalToDuration,
+  Duration,
+  isAfter,
+  differenceInDays,
+} from "date-fns";
 import { PartTime } from "./PartTime";
 import util from "../utils/util";
 
@@ -164,7 +169,7 @@ export const ShiftF = {
    * - "[m]" : 분
    * - "[s]" : 초
    */
-  getWorkDuration(w: Worker, format: string = "[yy]년 [mm]개월"): string {
+  getWorkDuration: (w: Worker, format: string = "[yy]년 [mm]개월"): string => {
     let duration: Duration;
     const formatSet = {
       "[yy]": () => `${duration?.years ?? "0"}`,
@@ -180,5 +185,14 @@ export const ShiftF = {
       duration = intervalToDuration({ start: w.joinDate, end: now });
     }
     return util.formater(format, formatSet);
+  },
+
+  /**
+   * 해당 근무자의 보건증 잔여일을 가져옵니다.
+   * @param w 근무자 인적 정보
+   * @returns 보건증 잔여일
+   */
+  getHealthCertDaysLeft: (w: Worker): number => {
+    return differenceInDays(w.healthCertExpiryDate, new Date());
   },
 };

@@ -14,7 +14,7 @@ import { TestWorker } from "../test/TestData";
 
 export default function Editor() {
   useEffect(() => {
-    console.log(ShiftF.getWorkDuration(TestWorker));
+    console.log(ShiftF.getHealthCertDaysLeft(TestWorker));
   }, []);
   return <div className="editorview"></div>;
 }
