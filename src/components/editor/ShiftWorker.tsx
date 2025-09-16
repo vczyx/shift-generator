@@ -69,6 +69,7 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({ day, workerId, error }) => {
    * 조건 : 수정 모드의 여부가 수정되었을 때
    * 실행 : 수정 모드 시 PartTime.start 값을 수정할 수 있는 input 요소를 focus
    *       일반 모드 시 PartTime의 값을 조정 (0이상 48이하, endTime의 경우 최소값을 startTime으로)
+   *       오류를 확인하고, 오류 메시지를 출력
    */
   useEffect(() => {
     if (isEditing) {
@@ -86,6 +87,23 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({ day, workerId, error }) => {
         start: startTime,
         end: endTime,
       };
+
+      // 오류 메시지 출력
+
+      const totalWorkingTime = ShiftF.getTotalWorkingTime(workerId);
+      // 0 시간 이하
+      if (workingTime <= 0) setError("0시간 이하", true);
+      // 법정 근로 시간 초과
+      else if (totalWorkingTime > roleData.limitUsageTime)
+        setError(`주 ${roleData.limitUsageTime}시간 초과`, true);
+      // 최대 근로 시간 초과
+      else if (totalWorkingTime > roleData.maxUsageTime)
+        setError(`주 ${roleData.maxUsageTime}시간 초과`, false);
+      // 하루 최대 근로 시간 초과
+      else if (workingTime > roleData.maxWorkingTime)
+        setError(`일 ${roleData.maxWorkingTime}시간 초과`, false);
+      // 오류 제거
+      else setError("", false);
     }
   }, [isEditing]);
 
@@ -130,8 +148,6 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({ day, workerId, error }) => {
    *       [Enter] : 수정모드 종료 / 변경 내용 저장
    *       [Escape] : 수정모드 종료 / 변경 내용 취소
    *
-   *       오류를 확인하고, 오류 메시지를 출력
-   *
    * @param e onKeyDown EventArgs
    * @param index ref input 요소 index
    */
@@ -161,19 +177,6 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({ day, workerId, error }) => {
       setStartTime(beforePartTime.start);
       setEndTime(beforePartTime.end);
     }
-
-    // 오류 메시지 출력
-
-    // 0 시간 이하
-    if (workingTime <= 0) setError("0시간 이하", true);
-    // 법정 근로 시간 초과
-    else if (workingTime > roleData.limitUsageTime)
-      setError(`${roleData.limitUsageTime}시간 초과`, true);
-    // 최대 근로 시간 초과
-    else if (workingTime > roleData.maxUsageTime)
-      setError(`${roleData.maxUsageTime}시간 초과`, false);
-    // 오류 제거
-    else setError("", false);
   };
 
   return (

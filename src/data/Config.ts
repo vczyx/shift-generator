@@ -9,6 +9,7 @@ export interface RestaurantRoleConfig {
   displayColor2: CSSColor;
   maxUsageTime: number;
   limitUsageTime: number;
+  maxWorkingTime: number;
 }
 
 export interface RestrauntConfig {

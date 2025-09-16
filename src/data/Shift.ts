@@ -4,7 +4,7 @@ import {
   isAfter,
   differenceInDays,
 } from "date-fns";
-import { PartTime } from "./PartTime";
+import { PartTime, PartTimeF } from "./PartTime";
 import util from "../utils/util";
 import { TestShiftData } from "../test/TestData";
 import { RestaurantRoleConfig, currentConfig } from "./Config";
@@ -219,8 +219,30 @@ export const ShiftF = {
   getRoleData: (w: Worker): RestaurantRoleConfig => {
     return currentConfig.Restaurant.roles[w.role].details[w.roleDetail];
   },
-  getWorker: (workerId: number): Worker => {
-    return currentShiftData.workers[workerId];
+
+  /**
+   * 근무자 Id에 해당하는 근무자 데이터를 가져옵니다.
+   * @param wId 근무자 ID
+   * @returns Worker Data
+   */
+  getWorker: (wId: number): Worker => {
+    return currentShiftData.workers[wId];
+  },
+
+  /**
+   * 해당 근무자의 주간 근무 시간을 가져옵니다.
+   * @param wId 근무자 ID
+   * @returns 주간 근무 시간
+   */
+  getTotalWorkingTime: (wId: number): number => {
+    let total = 0;
+    for (const day of Object.values(currentShiftData.week.days)) {
+      for (const [workerId, partTime] of Object.entries(day.workers)) {
+        if (parseInt(workerId) === wId)
+          total += PartTimeF.getWorkTime(partTime);
+      }
+    }
+    return total;
   },
 };
 
