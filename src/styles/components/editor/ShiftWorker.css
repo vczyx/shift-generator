@@ -6,6 +6,13 @@
   grid-template-columns: 1fr 1fr;
   font-weight: bold;
   user-select: none;
+  border: none; /* 또는 */
+  border: 2px solid transparent;
+
+  position: relative;
+
+  transition: all 0.15s ease;
+  overflow: hidden;
 }
 
 .editor-shift-worker-infowrapper {
@@ -54,4 +61,41 @@
   width: 36px;
   height: 23px;
   text-align: end;
+}
+.editor-shift-worker-timeedit {
+  width: 36px;
+  height: 23px;
+  border: none;
+  background-color: transparent;
+  z-index: 1;
+  font-size: 20;
+  font-weight: bold;
+  outline: none;
+}
+input::-webkit-inner-spin-button,
+input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.editor-shift-worker-editingcolor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: all 0.15s ease;
+  z-index: 0;
+}
+
+.editor-shift-worker-info {
+  font-size: 12;
+  margin-top: 7px;
+  color: red;
 }
