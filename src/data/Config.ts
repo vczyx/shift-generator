@@ -1,5 +1,15 @@
 import { OperationSymbol } from "../utils/util";
 import { TestConfig } from "../test/TestData";
+import { CSSColor } from "../utils/type";
+
+export interface RestaurantRoleConfig {
+  nickname: string;
+  descriptions: string;
+  displayColor1: CSSColor;
+  displayColor2: CSSColor;
+  maxUsageTime: number;
+  limitUsageTime: number;
+}
 
 export interface RestrauntConfig {
   /**
@@ -13,11 +23,11 @@ export interface RestrauntConfig {
   /**
    * 직급 설정
    */
-  roles: string[];
-  /**
-   * 세부 직급 (key: 직급, value: 세부 직급 설정 )
-   */
-  roleDetails: { [key: string]: string[] };
+  roles: {
+    [name: string]: {
+      details: { [name: string]: RestaurantRoleConfig };
+    };
+  };
   /**
    * 담당 포지션 설정
    */

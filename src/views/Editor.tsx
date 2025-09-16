@@ -1,3 +1,4 @@
+import ShiftWorker from "../components/editor/ShiftWorker";
 import "../styles/Editor.css";
 
 import {
@@ -8,6 +9,9 @@ import {
 } from "react-beautiful-dnd";
 
 export default function Editor() {
-
-  return <div className="editorview"></div>;
+  return (
+    <div className="editorview">
+      <ShiftWorker day="mon" workerId={1} />
+    </div>
+  );
 }

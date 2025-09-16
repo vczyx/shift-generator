@@ -6,6 +6,8 @@ import {
 } from "date-fns";
 import { PartTime } from "./PartTime";
 import util from "../utils/util";
+import { TestShiftData } from "../test/TestData";
+import { RestaurantRoleConfig, currentConfig } from "./Config";
 
 /**
  * 근무 시간 종류
@@ -131,14 +133,9 @@ export interface Day {
   expectedSales: number;
 
   /**
-   * 목표 사용 시간 (직원)
+   * 목표 사용 시간
    */
-  targetUsageTimeMgr: number;
-
-  /**
-   * 목표 사용 시간 (파트타이머)
-   */
-  targetUsageTimePt: number;
+  targetUsageTime: number;
 
   expectedTC: TCList;
 
@@ -163,7 +160,6 @@ export interface Shift {
    */
   workers: { [workerId: number]: Worker };
 }
-
 
 /**
  * Shift 데이터와 관련된 확장 함수들을 제공합니다.
@@ -214,4 +210,18 @@ export const ShiftF = {
     // 현재 날짜 - 보건증 만기일
     return differenceInDays(w.healthCertExpiryDate, new Date());
   },
+
+  /**
+   * 해당 근무자의 직급에 대한 세부 정보를 가져옵니다.
+   * @param w 근무자 인적 정보
+   * @returns 직급에 해당하는 Restaurant의 RoleDetail 데이터
+   */
+  getRoleData: (w: Worker): RestaurantRoleConfig => {
+    return currentConfig.Restaurant.roles[w.role].details[w.roleDetail];
+  },
+  getWorker: (workerId: number): Worker => {
+    return currentShiftData.workers[workerId];
+  },
 };
+
+export let currentShiftData: Shift = TestShiftData;
