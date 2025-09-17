@@ -1,0 +1,84 @@
+.editor-shift-day {
+  font-weight: bold;
+  line-height: 1;
+  user-select: none;
+  background-color: #e4e4e4;
+  width: 200px;
+  height: 690px;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-shift-day-header {
+  width: 200px;
+  height: 50px;
+  display: flex;
+  padding: 10px;
+  background-color: #f2f2f2;
+}
+
+.editor-shift-day-header-wd {
+  font-size: 24;
+  width: 23px;
+  height: 28px;
+}
+
+.editor-shift-day-header-wrapper {
+  display: flex;
+  flex-direction: column;
+  margin-left: 10px;
+}
+
+.editor-shift-day-header-date {
+  font-size: 14;
+}
+
+.editor-shift-day-header-desc {
+  font-size: 12;
+  width: 130px;
+  overflow: hidden;
+}
+
+.editor-shift-day-workerwrapper {
+  overflow-y: scroll;
+  flex: 1;
+}
+
+.editor-shift-day-footer {
+  height: 120px;
+  background-color: #f2f2f2;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.editor-shift-day-footer-groupwrapper {
+  height: 40;
+  display: flex;
+}
+
+.editor-shift-day-footer-valuewrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+.editor-shift-day-footer-timewrapper {
+  height: 45;
+}
+
+.editor-shift-day-footer-label {
+  font-size: 10;
+}
+.editor-shift-day-footer-value {
+  font-size: 16;
+}
+
+.editor-shift-day-footer-smhwrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}

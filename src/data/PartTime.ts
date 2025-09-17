@@ -34,11 +34,11 @@ export const PartTimeF = {
     }
 
     // 계산된 휴게 시간이 0이면 경고 출력
-    if (restTimeTotal === 0) {
-      console.warn(
-        `Couldn't calculate the rest time(${PartTimeF.getTotalTime(pt)}). Please check the rest time configuration.`
-      );
-    }
+    // if (restTimeTotal === 0) {
+    //   console.warn(
+    //     `Couldn't calculate the rest time(${PartTimeF.getTotalTime(pt)}). Please check the rest time configuration.`
+    //   );
+    // }
 
     return restTimeTotal;
   },

@@ -1,18 +1,21 @@
 .editor-shift-worker {
   width: 180px;
-  height: 60px;
+  height: 70px;
   padding: 10px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   font-weight: bold;
   user-select: none;
-  border: none; /* 또는 */
   border: 2px solid transparent;
 
   position: relative;
 
   transition: all 0.15s ease;
   overflow: hidden;
+}
+
+.editor-shift-worker:hover {
+  border-color: blue !important;
 }
 
 .editor-shift-worker-infowrapper {
@@ -27,7 +30,12 @@
 
 .editor-shift-worker-role {
   font-size: 12;
-  margin-top: -3px;
+  margin-top: -2px;
+}
+
+.editor-shift-worker-pos {
+  margin-top: 5px;
+  height: 16px;
 }
 
 .editor-shift-worker-timewrapper {
@@ -47,7 +55,8 @@
 .editor-shift-worker-working {
   font-size: 12;
   text-align: center;
-  margin-top: -5px;
+  margin-right: 7px;
+  /* margin-top: -5px; */
 }
 
 .editor-shift-worker-timehalf {
@@ -96,6 +105,18 @@ input::-webkit-outer-spin-button {
 
 .editor-shift-worker-info {
   font-size: 12;
-  margin-top: 7px;
-  color: red;
+  margin-top: 20px;
+  z-index: 50;
+  font-style: italic;
+}
+
+.editor-shift-worker-poscard {
+  background-color: #ffffff;
+  color: black;
+  font-weight: bold;
+  padding: 0px 4px;
+  border-radius: 10px;
+  font-size: 9;
+  display: inline;
+  margin-right: 3px;
 }

@@ -1,0 +1,68 @@
+.editor-shift-workerinfo {
+  position: absolute;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  background-color: #333333d2;
+  color: white;
+  border-radius: 5px;
+  font-size: 12;
+  white-space: nowrap;
+  min-height: 0px;
+  pointer-events: none;
+  transition: all 0.1s ease-out;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.editor-shift-workerinfo-contentbox {
+  margin: 10px;
+  color: white;
+}
+
+.editor-shift-workerinfo-contentbox > table > thead > tr > th {
+  padding-right: 15px;
+  color: white;
+  text-align: center;
+  font-size: 20;
+}
+
+.editor-shift-workerinfo-contentbox > table > tbody > tr > th {
+  padding-right: 15px;
+  color: white;
+  text-align: left;
+}
+.editor-shift-workerinfo-contentbox > table > tbody > tr > td {
+  color: white;
+  text-align: left;
+}
+.thr {
+  height: 15px;
+}
+
+.editor-shift-workerinfo-rolecard {
+  color: black;
+  font-weight: bold;
+  padding: 2px 15px;
+  border-radius: 5px;
+  display: inline;
+}
+
+.editor-shift-workerinfo-wdcard {
+  color: white;
+  font-weight: bold;
+  padding: 2px 4px;
+  border-radius: 5px;
+  display: inline;
+  margin-right: 3px;
+}
+
+.editor-shift-workerinfo-poscard {
+  background-color: #ffffff;
+  color: black;
+  font-weight: bold;
+  padding: 0px 4px;
+  border-radius: 20px;
+  font-size: 12;
+  display: inline;
+  margin-left: 4px;
+}

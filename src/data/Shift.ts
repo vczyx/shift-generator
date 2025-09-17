@@ -8,6 +8,7 @@ import { PartTime, PartTimeF } from "./PartTime";
 import util from "../utils/util";
 import { TestShiftData } from "../test/TestData";
 import { RestaurantRoleConfig, currentConfig } from "./Config";
+import { CSSColor } from "../utils/type";
 
 /**
  * 근무 시간 종류
@@ -139,6 +140,8 @@ export interface Day {
 
   expectedTC: TCList;
 
+  color: CSSColor;
+
   workers: { [workerId: number]: PartTime };
 }
 
@@ -154,6 +157,11 @@ export interface Shift {
    * 주간 데이터
    */
   week: Week;
+
+  /**
+   * 월요일 날짜
+   */
+  firstDate: Date;
 
   /**
    * 근무자 데이터
@@ -225,8 +233,8 @@ export const ShiftF = {
    * @param wId 근무자 ID
    * @returns Worker Data
    */
-  getWorker: (wId: number): Worker => {
-    return currentShiftData.workers[wId];
+  getWorker: (wId: number): Worker | null => {
+    return wId === -1 ? null : currentShiftData.workers[wId];
   },
 
   /**
@@ -244,6 +252,55 @@ export const ShiftF = {
     }
     return total;
   },
+
+  /**
+   * 해당 요일의 계획 시간을 가져옵니다.
+   * @param wd 요일
+   */
+  getWeekPlannedUsageTime: (wd: WeekDays): number => {
+    let total = 0;
+    for (const pt of Object.values(currentShiftData.week.days[wd].workers))
+      total += PartTimeF.getWorkTime(pt);
+
+    return total;
+  },
+
+  /**
+   * 해당 근무자의 심야 근로 시간을 가져옵니다.
+   * @param wId 근무자 ID
+   * @returns 심야 근로 시간
+   */
+  getNightWorkingTime: (wId: number): number => {
+    return 0;
+  },
+
+  /**
+   * 해당 근무자의 연장 근로 시간을 가져옵니다.
+   * @param wId 근무자 ID
+   * @returns 연장 근로 시간
+   */
+  getAdditionalWorkingTime: (wId: number): number => {
+    return 0;
+  },
+
+  /**
+   * 근무자가 근무하는 요일을 모두 가져옵니다.
+   * @param wId 근무자 ID
+   */
+  getWorkWeekdays: (wId: number): WeekDays[] => {
+    let res: string[] = [];
+    for (const [wd, day] of Object.entries(currentShiftData.week.days)) {
+      const x = Object.keys(day.workers).filter((w) => parseInt(w) === wId);
+      if (x.length > 0) res = [...res, wd];
+    }
+
+    return res as WeekDays[];
+  },
 };
 
 export let currentShiftData: Shift = TestShiftData;
+
+export const onModifiedShiftData = new CustomEvent("onModifiedShiftData");
+export const modifyShiftData = () => {
+  window.dispatchEvent(onModifiedShiftData);
+};
