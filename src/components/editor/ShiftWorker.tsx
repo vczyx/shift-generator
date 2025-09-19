@@ -42,9 +42,6 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
   // 색 설정
   const errorColor = "rgba(50,50,50,0.5)";
   const editColor = "rgba(100, 100, 255, 0.3)";
-  const c1 = roleData.displayColor1;
-  const c2 = roleData.displayColor2 ?? roleData.displayColor1;
-  const roleColor = `linear-gradient(90deg, ${c1} 0%, ${c1} 40%, ${c2} 70%, ${c2} 100%)`;
 
   // State 선언
   const [errorMsg, setErrorMsg] = useState(error);
@@ -234,9 +231,13 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
         className="editor-shift-worker"
         onDoubleClick={handleDoubleClick}
         style={{
-          backgroundImage: roleColor,
+          backgroundImage: ShiftF.getRoleColorGradient(curWorker),
           height: isEditing || errorMsg.length > 0 ? "90px" : "70px",
-          borderColor: isEditing ? "blue" : errorMsg.length > 0 ? "red" : c2,
+          borderColor: isEditing
+            ? "blue"
+            : errorMsg.length > 0
+              ? "red"
+              : roleData.displayColor2,
         }}
         // title="더블클릭 하여 수정\n"
         onMouseEnter={(e) => {

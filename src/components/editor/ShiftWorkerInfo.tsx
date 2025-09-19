@@ -22,11 +22,6 @@ const ShiftWorkerInfo = forwardRef<unknown, ShiftWorkerInfoProps>(
     const worker = ShiftF.getWorker(props.getWId());
     const roleData = worker ? ShiftF.getRoleData(worker) : null;
 
-    // 색 설정
-    const c1 = roleData?.displayColor1;
-    const c2 = roleData?.displayColor2 ?? roleData?.displayColor1;
-    const roleColor = `linear-gradient(90deg, ${c1} 0%, ${c1} 40%, ${c2} 70%, ${c2} 100%)`;
-
     // Ref 설정
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -118,7 +113,9 @@ const ShiftWorkerInfo = forwardRef<unknown, ShiftWorkerInfoProps>(
                   <td>
                     <p
                       className="editor-shift-workerinfo-rolecard"
-                      style={{ background: roleColor }}
+                      style={{
+                        background: ShiftF.getRoleColorGradient(worker),
+                      }}
                     >
                       {roleData.nickname}
                     </p>

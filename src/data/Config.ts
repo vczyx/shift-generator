@@ -48,7 +48,7 @@ export interface RestrauntConfig {
   /**
    * Restaurant 운영 종료 시간 (cleaning time 포함)
    */
-  operationgEnd: number;
+  operatingEnd: number;
 }
 
 export interface RestTimeConfig {

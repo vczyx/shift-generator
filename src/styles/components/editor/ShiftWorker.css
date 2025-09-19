@@ -99,7 +99,7 @@ input::-webkit-outer-spin-button {
   align-items: center;
   justify-content: center;
 
-  transition: all 0.15s ease;
+  transition: all 0.2s ease-in-out;
   z-index: 0;
 }
 

@@ -60,6 +60,17 @@ const util = {
   },
 };
 
+export const range = (
+  start: number,
+  end: number,
+  step: number = 1
+): number[] => {
+  return Array.from(
+    { length: Math.ceil((end - start) / step) },
+    (_, i) => start + i * step
+  );
+};
+
 export const weekDayKor: Record<WeekDays, string> = {
   mon: "월",
   tue: "화",

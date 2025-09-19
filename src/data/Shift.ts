@@ -296,6 +296,32 @@ export const ShiftF = {
 
     return res as WeekDays[];
   },
+
+  /**
+   * 해당 근무자의 직급에 대한 그라이언트 색상 정보를 가져옵니다.
+   * @param w 근무자 정보
+   * @returns 근무자의 직급에 대한 그라이언트 색상 정보
+   */
+  getRoleColorGradient: (w: Worker): string => {
+    const roleData = ShiftF.getRoleData(w);
+    const c1 = roleData.displayColor1;
+    const c2 = roleData.displayColor2 ?? roleData.displayColor1;
+    return `linear-gradient(90deg, ${c1} 0%, ${c1} 40%, ${c2} 70%, ${c2} 100%)`;
+  },
+
+  /**
+   * 해당 요일-시간에 해당 하는 근무자의 인원수를 가져옵니다.
+   * @param wd 요일
+   * @param h 시간
+   * @returns 해당 시간의 근무자 인원수
+   */
+  getWorkerCount: (wd: WeekDays, h: number): number => {
+    const day = currentShiftData.week.days[wd];
+    const workers = Object.values(day.workers).filter(
+      (pt) => pt.start <= h && pt.end > h
+    );
+    return workers.length;
+  },
 };
 
 export let currentShiftData: Shift = TestShiftData;

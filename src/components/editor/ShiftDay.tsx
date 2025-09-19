@@ -4,10 +4,44 @@ import ShiftWorker, { currentWorkerId } from "./ShiftWorker";
 import { addDays, format } from "date-fns";
 import "../../styles/components/editor/ShiftDay.css";
 import ShiftWorkerInfo from "./ShiftWorkerInfo";
-import { weekDayKor } from "../../utils/util";
+import { range, weekDayKor } from "../../utils/util";
+import { currentConfig } from "../../data/Config";
+import { PartTime, PartTimeF } from "../../data/PartTime";
+import ChartDataLabels from "chartjs-plugin-datalabels";
+
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+  Legend,
+  ChartData,
+  ChartOptions,
+  TimeScale,
+} from "chart.js";
+import { Chart } from "react-chartjs-2";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  ChartDataLabels,
+  Title,
+  Tooltip,
+  Legend
+);
 
 export interface ShiftDayProps {
   weekDay: WeekDays;
+  onSelect: (wd: WeekDays, v: boolean) => void;
+  visible: boolean;
+  detail: boolean;
 }
 
 const weekDayDateAdd: Record<WeekDays, number> = {
@@ -20,7 +54,12 @@ const weekDayDateAdd: Record<WeekDays, number> = {
   sun: 6,
 };
 
-const ShiftDay: React.FC<ShiftDayProps> = ({ weekDay }) => {
+const ShiftDay: React.FC<ShiftDayProps> = ({
+  weekDay,
+  visible,
+  onSelect,
+  detail,
+}) => {
   const dayData = currentShiftData.week.days[weekDay];
   const curDate = format(
     addDays(currentShiftData.firstDate, weekDayDateAdd[weekDay]),
@@ -31,8 +70,156 @@ const ShiftDay: React.FC<ShiftDayProps> = ({ weekDay }) => {
   const [targetUsage, setTargetUsage] = useState(dayData.targetUsageTime);
   const [plannedUsage, setPlannedUsage] = useState(0);
   const [smh, setSmh] = useState(0);
+  const [desc, setDesc] = useState(dayData.descriptions);
+  const [chartData, setChartData] = useState<{
+    options: ChartOptions;
+    data: any;
+  }>(undefined);
+  const [workers, setWorkers] = useState(dayData.workers);
+  const [chartHeight, setChartHeight] = useState(0);
 
   const infoRef = useRef<any>(null);
+  const chartRef = useRef<any>(null);
+
+  const handleOnChangedWorkers = () => {
+    setWorkers(dayData.workers);
+
+    // 차트 데이터 설정 (인원 사용 현황)
+    setChartHeight(Object.keys(dayData.workers).length * 50 + 20);
+    setChartData({
+      options: {
+        responsive: true,
+        indexAxis: "y" as const, // 👈 이 부분이 핵심!
+        plugins: {
+          legend: {
+            display: false,
+          },
+          // DATALABEL 설정 (BAR에 내용 출력)
+          datalabels: {
+            color: "#000",
+            anchor: "start",
+            align: "left",
+            textAlign: "right",
+            font: { size: 14, weight: "bold" },
+            formatter: (value: any, context: any) => {
+              const label = context.chart.data.labels?.[context.dataIndex];
+              const w = ShiftF.getWorker(label);
+              const roleData = ShiftF.getRoleData(w);
+              const pt = { start: value[0], end: value[1] };
+              return [
+                `[ ${roleData.nickname} ] ${w.name} (${w.position.join(", ")})`,
+                `${pt.start} - ${pt.end} ( ${PartTimeF.getWorkTime(pt)} )`,
+              ]; // 줄바꿈
+            },
+          },
+          // TOOLTIP 설정 (마우스 갖다 대면 세부 내용 출력)
+          tooltip: {
+            callbacks: {
+              // 제목 (이름)
+              title: (context) => {
+                const w = ShiftF.getWorker(parseInt(context[0].label));
+                if (!w) return `예기치 않은 오류로 정보를 표시할 수 없습니다.`;
+                return w.name;
+              },
+              // 내용 (직급, 담당 포지션)
+              beforeBody: (context) => {
+                const w = ShiftF.getWorker(parseInt(context[0].label));
+                if (!w) return `예기치 않은 오류로 정보를 표시할 수 없습니다.`;
+                const roleData = ShiftF.getRoleData(w);
+                const posData = currentConfig.Restaurant.multiPositionDisplay;
+                return [
+                  `[ 직급 ]   ${roleData.nickname}`,
+                  `[ 담당 구역 ]   ${posData[w.position.length]} (${w.position.join("+")})`,
+                  `[ 입사일 ]   ${format(w.joinDate, "yyyy-MM-dd")} (${ShiftF.getWorkDuration(w)})`,
+                  `[ 보건증 만기일 ]   ${format(w.healthCertExpiryDate, "yyyy-MM-dd")} (${ShiftF.getHealthCertDaysLeft(w)})`,
+                ];
+              },
+              // 레이블 (근무 시간)
+              label: (context) => {
+                const value = context.parsed.y;
+                const label = context.dataset.label || "";
+                const w = ShiftF.getWorker(parseInt(context.label));
+                if (!w) return `예기치 않은 오류로 정보를 표시할 수 없습니다.`;
+                const roleData = ShiftF.getRoleData(w);
+                // 원하는 설명 추가
+                const data = context.raw as number[];
+                const pt = { start: data[0], end: data[1] };
+                return `[IN] ${pt.start}   [OUT] ${pt.end}   [WORK] ${PartTimeF.getWorkTime(pt)}`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: ["영업 시간", "(인원수)"],
+            },
+            ticks: {
+              stepSize: 1,
+              callback: (value) => {
+                const workerCount = ShiftF.getWorkerCount(
+                  weekDay,
+                  parseInt(value.toString())
+                );
+                return [`${value}시`, `(${workerCount}명)`];
+              },
+            },
+            min: currentConfig.Restaurant.operatingStart,
+            max: currentConfig.Restaurant.operatingEnd,
+          },
+          y: {
+            display: false,
+          },
+        },
+      },
+      data: {
+        labels: Object.keys(workers),
+        datasets: [
+          {
+            label: "근무 시간",
+            type: "bar" as const,
+            data: Object.values(workers).map((pt) => [pt.start, pt.end]),
+            backgroundColor: (context: any) => {
+              const label = context.chart.data.labels?.[context.dataIndex];
+              const meta = context.chart.getDatasetMeta(context.datasetIndex);
+              const bar = meta.data[context.dataIndex];
+              const ctx = context.chart.ctx; // CanvasRenderingContext2D
+              const w = ShiftF.getWorker(label);
+              if (!w) return "white";
+              const roleData = w ? ShiftF.getRoleData(w) : null;
+              const x = bar?.x ?? 0;
+              const y = bar?.y ?? 0;
+
+              const gradient = ctx.createLinearGradient(
+                x - 0,
+                y - 10,
+                x + 0,
+                y + 10
+              );
+
+              gradient.addColorStop(0, roleData.displayColor1); // 시작 색
+              gradient.addColorStop(
+                1,
+                roleData.displayColor2 ?? roleData.displayColor1
+              ); // 끝 색
+
+              return gradient;
+            },
+            barThickness: 40,
+            maxBarThickness: 40,
+          },
+        ],
+      },
+    });
+  };
+
+  useEffect(() => {
+    window.addEventListener("onModifiedShiftData", handleOnChangedWorkers);
+    handleOnChangedWorkers();
+    return () =>
+      window.removeEventListener("onModifiedShiftData", handleOnChangedWorkers);
+  }, []);
 
   const handleOnModifiedShiftData = () => {
     setPlannedUsage((pre) => {
@@ -40,6 +227,10 @@ const ShiftDay: React.FC<ShiftDayProps> = ({ weekDay }) => {
       setSmh(plan > 0 ? (expectedSale * 1000) / plan : 0);
       return plan;
     });
+  };
+
+  const handleOnDoubleClick = () => {
+    onSelect(weekDay, true);
   };
 
   useEffect(() => {
@@ -56,10 +247,24 @@ const ShiftDay: React.FC<ShiftDayProps> = ({ weekDay }) => {
     handleOnModifiedShiftData();
   }, [expectedSale]);
 
+  useEffect(() => {
+    currentShiftData.week.days[weekDay].descriptions = desc;
+  }, [desc]);
+
   return (
     <>
-      <div className="editor-shift-day">
-        <div className="editor-shift-day-header">
+      <div
+        className="editor-shift-day"
+        style={{
+          width: detail && visible ? "1400px" : visible ? "200px" : "0px",
+        }}
+      >
+        <div
+          className="editor-shift-day-header"
+          onClick={handleOnDoubleClick}
+          title={"클릭하여 세부 사항 " + (!detail ? "펼치기" : "접기")}
+          // style={{ width: detail ? "1200px" : "200px" }}
+        >
           <div
             className="editor-shift-day-header-wd"
             style={{ color: dayData.color }}
@@ -69,59 +274,95 @@ const ShiftDay: React.FC<ShiftDayProps> = ({ weekDay }) => {
           <div className="editor-shift-day-header-wrapper">
             <div
               className="editor-shift-day-header-date"
-              style={{ color: dayData.color }}
+              style={{
+                color: dayData.color,
+                fontSize: desc.length > 0 ? "12" : "24",
+              }}
             >
               {curDate}
             </div>
-            <div className="editor-shift-day-header-desc">
-              {dayData.descriptions}
-            </div>
+            <div className="editor-shift-day-header-desc">{desc}</div>
           </div>
         </div>
-        <ul className="editor-shift-day-workerwrapper">
-          {Object.keys(dayData.workers).map((wId) => (
-            <li key={parseInt(wId)}>
-              <ShiftWorker
-                day={weekDay}
-                workerId={parseInt(wId)}
-                infoRef={infoRef}
-              />
-            </li>
-          ))}
-        </ul>
-        <div className="editor-shift-day-footer">
-          <div className="editor-shift-day-footer-groupwrapper">
-            <div className="editor-shift-day-footer-valuewrapper">
-              <div className="editor-shift-day-footer-label">목표 매출</div>
-              <div className="editor-shift-day-footer-value">
-                {targetSale.toLocaleString("ko-kr")}
+        <div className="editor-shift-day-contentwrapper">
+          <div className="editor-shift-day-daywrapper">
+            <ul className="editor-shift-day-workerwrapper">
+              {Object.keys(workers).map((wId) => (
+                <li key={parseInt(wId)}>
+                  <ShiftWorker
+                    day={weekDay}
+                    workerId={parseInt(wId)}
+                    infoRef={infoRef}
+                  />
+                </li>
+              ))}
+            </ul>
+            <div className="editor-shift-day-footer">
+              <div className="editor-shift-day-footer-groupwrapper">
+                <div className="editor-shift-day-footer-valuewrapper">
+                  <div className="editor-shift-day-footer-label">목표 매출</div>
+                  <div className="editor-shift-day-footer-value">
+                    {targetSale.toLocaleString("ko-kr")}
+                  </div>
+                </div>
+                <div className="editor-shift-day-footer-valuewrapper">
+                  <div className="editor-shift-day-footer-label">예상 매출</div>
+                  <div className="editor-shift-day-footer-value">
+                    {expectedSale.toLocaleString("ko-kr")}
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="editor-shift-day-footer-valuewrapper">
-              <div className="editor-shift-day-footer-label">예상 매출</div>
-              <div className="editor-shift-day-footer-value">
-                {expectedSale.toLocaleString("ko-kr")}
+              <div className="editor-shift-day-footer-groupwrapper">
+                <div className="editor-shift-day-footer-valuewrapper">
+                  <div className="editor-shift-day-footer-label">목표 시간</div>
+                  <div className="editor-shift-day-footer-value">
+                    {targetUsage.toLocaleString("ko-kr")}
+                  </div>
+                </div>
+                <div className="editor-shift-day-footer-valuewrapper">
+                  <div className="editor-shift-day-footer-label">계획 시간</div>
+                  <div className="editor-shift-day-footer-value">
+                    {plannedUsage.toLocaleString("ko-kr")}
+                  </div>
+                </div>
+              </div>
+              <div className="editor-shift-day-footer-smhwrapper">
+                <div className="editor-shift-day-footer-label">S.M.H.</div>
+                <div className="editor-shift-day-footer-value">
+                  {Math.floor(smh).toLocaleString("ko-kr")}
+                </div>
               </div>
             </div>
           </div>
-          <div className="editor-shift-day-footer-groupwrapper">
-            <div className="editor-shift-day-footer-valuewrapper">
-              <div className="editor-shift-day-footer-label">목표 시간</div>
-              <div className="editor-shift-day-footer-value">
-                {targetUsage.toLocaleString("ko-kr")}
+
+          <div className="editor-shift-day-detail-wrapper">
+            <div className="editor-shift-day-detail">
+              <div className="editor-shift-day-detail-info">
+                <input
+                  className="editor-shift-day-detail-input"
+                  placeholder="행사 내용"
+                  style={{ flex: "1" }}
+                  value={desc}
+                  onChange={(x) => setDesc(x.target.value)}
+                ></input>
               </div>
-            </div>
-            <div className="editor-shift-day-footer-valuewrapper">
-              <div className="editor-shift-day-footer-label">계획 시간</div>
-              <div className="editor-shift-day-footer-value">
-                {plannedUsage.toLocaleString("ko-kr")}
+              <div className="editor-shift-day-detail-worker">
+                <div className="editor-shift-day-detail-header">
+                  인원 사용 현황
+                </div>
+                <div className="editor-shift-day-detail-workercount">
+                  {chartData && (
+                    <Chart
+                      type="bar"
+                      ref={chartRef}
+                      options={chartData?.options}
+                      data={chartData?.data}
+                      height={chartHeight}
+                      width={1180}
+                    />
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
-          <div className="editor-shift-day-footer-smhwrapper">
-            <div className="editor-shift-day-footer-label">S.M.H.</div>
-            <div className="editor-shift-day-footer-value">
-              {Math.floor(smh).toLocaleString("ko-kr")}
             </div>
           </div>
         </div>
