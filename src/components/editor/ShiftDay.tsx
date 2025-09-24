@@ -4,9 +4,9 @@ import ShiftWorker, { currentWorkerId } from "./ShiftWorker";
 import { addDays, format } from "date-fns";
 import "../../styles/components/editor/ShiftDay.css";
 import ShiftWorkerInfo from "./ShiftWorkerInfo";
-import { range, weekDayKor } from "../../utils/util";
+import { weekDayKor } from "../../utils/util";
 import { currentConfig } from "../../data/Config";
-import { PartTime, PartTimeF } from "../../data/PartTime";
+import { PartTimeF } from "../../data/PartTime";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 
 import {
@@ -19,13 +19,12 @@ import {
   Title,
   Tooltip,
   Legend,
-  ChartData,
   ChartOptions,
-  TimeScale,
 } from "chart.js";
 import { Chart } from "react-chartjs-2";
 import { ContextMenuHandle, ContextMenuItemData } from "../ContextMenu";
 
+// ChartJS 설정
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -38,6 +37,7 @@ ChartJS.register(
   Legend
 );
 
+// Props Interface
 export interface ShiftDayProps {
   weekDay: WeekDays;
   onSelect: (wd: WeekDays, v: boolean) => void;
@@ -63,11 +63,14 @@ const ShiftDay: React.FC<ShiftDayProps> = ({
   detail,
   contextMenu,
 }) => {
+  // 기본 정보 설정
   const dayData = currentShiftData.week.days[weekDay];
   const curDate = format(
     addDays(currentShiftData.firstDate, weekDayDateAdd[weekDay]),
     "MM/dd"
   );
+
+  // STATES
   const [targetSale, setTargetSale] = useState(dayData.targetSales);
   const [expectedSale, setExpectedSale] = useState(dayData.expectedSales);
   const [targetUsage, setTargetUsage] = useState(dayData.targetUsageTime);
@@ -81,9 +84,16 @@ const ShiftDay: React.FC<ShiftDayProps> = ({
   const [workers, setWorkers] = useState(dayData.workers);
   const [chartHeight, setChartHeight] = useState(0);
 
+  // REFS
   const infoRef = useRef<any>(null);
   const chartRef = useRef<any>(null);
 
+  /**
+   * Handle
+   *
+   *  조건 : window.onModifiedShiftData 커스텀 이벤트가 실행 되었을 때
+   *  실행 : state를 재설정하고, 차트 데이터를 설정
+   */
   const handleOnChangedWorkers = () => {
     setWorkers(dayData.workers);
 
@@ -217,15 +227,15 @@ const ShiftDay: React.FC<ShiftDayProps> = ({
     });
   };
 
-  useEffect(() => {
-    window.addEventListener("onModifiedShiftData", handleOnChangedWorkers);
-    handleOnChangedWorkers();
-    return () =>
-      window.removeEventListener("onModifiedShiftData", handleOnChangedWorkers);
-  }, []);
-
+  /**
+   * Handle
+   *
+   *  조건 : window.onModifiedShiftData 커스텀 이벤트가 실행 되었을 때
+   *  실행 : handleOnChangedWorkers 실행, SMH 계산
+   */
   const handleOnModifiedShiftData = () => {
-    setPlannedUsage((pre) => {
+    handleOnChangedWorkers();
+    setPlannedUsage(() => {
       const plan = ShiftF.getWeekPlannedUsageTime(weekDay);
       setSmh(plan > 0 ? (expectedSale * 1000) / plan : 0);
       return plan;
@@ -236,9 +246,15 @@ const ShiftDay: React.FC<ShiftDayProps> = ({
     onSelect(weekDay, true);
   };
 
+  /**
+   * Effect
+   *
+   *  조건 : 렌더링 시작
+   *  실행 : window.onModifiedShiftData 커스텀 이벤트를 handleOnModifiedShiftData 핸들 지정
+   */
   useEffect(() => {
     window.addEventListener("onModifiedShiftData", handleOnModifiedShiftData);
-    handleOnModifiedShiftData();
+
     return () =>
       window.removeEventListener(
         "onModifiedShiftData",
@@ -246,14 +262,30 @@ const ShiftDay: React.FC<ShiftDayProps> = ({
       );
   }, []);
 
+  /**
+   * Effect
+   *
+   *  조건 : 예상 매출 값이 수정되었을 때
+   *  실행 : onModifiedShiftData 실행
+   */
   useEffect(() => {
     handleOnModifiedShiftData();
   }, [expectedSale]);
 
+  /**
+   * Effect
+   *
+   *  조건 : 행사 내용 값이 수정되었을 때
+   *  실행 : ShiftData 값 수정
+   */
   useEffect(() => {
     currentShiftData.week.days[weekDay].descriptions = desc;
   }, [desc]);
 
+  /**
+   * 근무자 추가
+   * @param wId 근무자 ID
+   */
   const addWorker = (wId: number) => {
     const workers = currentShiftData.week.days[weekDay].workers;
     currentShiftData.week.days[weekDay].workers = Object.fromEntries([
@@ -262,6 +294,10 @@ const ShiftDay: React.FC<ShiftDayProps> = ({
     ]);
   };
 
+  /**
+   * ContextMenuItem 구성
+   * @returns ContextMenuItems
+   */
   const getContextMenuItems = (): ContextMenuItemData[] => {
     return [
       {
@@ -290,10 +326,18 @@ const ShiftDay: React.FC<ShiftDayProps> = ({
       },
     ];
   };
+
+  /**
+   * Handle
+   *
+   *  조건 : 컴포넌트의 onContextMenu 이벤트가 실행되었을 때
+   *  실행 : Custom Context Menu 실행
+   */
   const handleOnContextMenu = (e: React.MouseEvent) => {
     contextMenu.current?.open(getContextMenuItems(), e);
   };
 
+  // RENDERRING
   return (
     <>
       <div

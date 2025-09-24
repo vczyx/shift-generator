@@ -5,17 +5,18 @@ import React, {
   useRef,
   useState,
 } from "react";
-
-interface ShiftWorkerInfoProps {
-  getWId: () => number;
-}
-
 import "../../styles/components/editor/ShiftWorkerInfo.css";
 import { ShiftF, currentShiftData } from "../../data/Shift";
 import { format } from "date-fns";
 import { currentWorkerId } from "./ShiftWorker";
 import { weekDayKor } from "../../utils/util";
 import { currentConfig } from "../../data/Config";
+
+// Props Interface
+interface ShiftWorkerInfoProps {
+  getWId: () => number;
+}
+
 const ShiftWorkerInfo = forwardRef<unknown, ShiftWorkerInfoProps>(
   (props, ref) => {
     // 기본 값
