@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { RefObject, useEffect, useRef, useState } from "react";
 import { ShiftF, WeekDays, currentShiftData } from "../../data/Shift";
 import ShiftWorker, { currentWorkerId } from "./ShiftWorker";
 import { addDays, format } from "date-fns";
@@ -24,6 +24,7 @@ import {
   TimeScale,
 } from "chart.js";
 import { Chart } from "react-chartjs-2";
+import { ContextMenuHandle, ContextMenuItemData } from "../ContextMenu";
 
 ChartJS.register(
   CategoryScale,
@@ -42,6 +43,7 @@ export interface ShiftDayProps {
   onSelect: (wd: WeekDays, v: boolean) => void;
   visible: boolean;
   detail: boolean;
+  contextMenu: RefObject<ContextMenuHandle>;
 }
 
 const weekDayDateAdd: Record<WeekDays, number> = {
@@ -59,6 +61,7 @@ const ShiftDay: React.FC<ShiftDayProps> = ({
   visible,
   onSelect,
   detail,
+  contextMenu,
 }) => {
   const dayData = currentShiftData.week.days[weekDay];
   const curDate = format(
@@ -251,6 +254,46 @@ const ShiftDay: React.FC<ShiftDayProps> = ({
     currentShiftData.week.days[weekDay].descriptions = desc;
   }, [desc]);
 
+  const addWorker = (wId: number) => {
+    const workers = currentShiftData.week.days[weekDay].workers;
+    currentShiftData.week.days[weekDay].workers = Object.fromEntries([
+      ...Object.entries(workers),
+      [wId, { start: 0, end: 0 }],
+    ]);
+  };
+
+  const getContextMenuItems = (): ContextMenuItemData[] => {
+    return [
+      {
+        type: "label",
+        caption: `${curDate} (${weekDayKor[weekDay]})`,
+      },
+      {
+        type: "button",
+        caption: "추가",
+        child: Object.entries(currentShiftData.workers).map(([id, w]) => ({
+          type: "button",
+          caption: w.name,
+          onClick: () => addWorker(parseInt(id)),
+          child: [
+            {
+              type: "label",
+              caption: "test",
+            },
+          ],
+        })),
+      },
+      {
+        type: "button",
+        caption: "세부 사항 " + (!detail ? "펼치기" : "접기"),
+        onClick: handleOnDoubleClick,
+      },
+    ];
+  };
+  const handleOnContextMenu = (e: React.MouseEvent) => {
+    contextMenu.current?.open(getContextMenuItems(), e);
+  };
+
   return (
     <>
       <div
@@ -258,6 +301,7 @@ const ShiftDay: React.FC<ShiftDayProps> = ({
         style={{
           width: detail && visible ? "1400px" : visible ? "200px" : "0px",
         }}
+        onContextMenu={(e) => handleOnContextMenu(e)}
       >
         <div
           className="editor-shift-day-header"
@@ -293,6 +337,8 @@ const ShiftDay: React.FC<ShiftDayProps> = ({
                     day={weekDay}
                     workerId={parseInt(wId)}
                     infoRef={infoRef}
+                    contextMenu={contextMenu}
+                    contextMenuItems={getContextMenuItems()}
                   />
                 </li>
               ))}

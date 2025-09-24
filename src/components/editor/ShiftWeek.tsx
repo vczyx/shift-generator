@@ -1,9 +1,14 @@
-import React, { useState } from "react";
+import React, { RefObject, useRef, useState } from "react";
 import ShiftDay from "./ShiftDay";
 import "../../styles/components/editor/ShiftWeek.css";
 import { WeekDays } from "../../data/Shift";
+import { ContextMenuHandle, ContextMenuProps } from "../ContextMenu";
 
-export default function ShiftWeek() {
+interface ShiftWeekProps {
+  contextMenu: RefObject<ContextMenuHandle>;
+}
+
+const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
   const [visibles, setVisibles] = useState<Record<WeekDays, boolean>>({
     mon: true,
     tue: true,
@@ -14,6 +19,7 @@ export default function ShiftWeek() {
     sun: true,
   });
   const [isDetails, setIsDetails] = useState(false);
+  const days: WeekDays[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
   const handleOnSelect = (wd: WeekDays) => {
     setVisibles(() => {
@@ -37,48 +43,17 @@ export default function ShiftWeek() {
 
   return (
     <div className="editor-shift-week">
-      <ShiftDay
-        weekDay="mon"
-        onSelect={handleOnSelect}
-        visible={visibles["mon"]}
-        detail={isDetails}
-      />
-      <ShiftDay
-        weekDay="tue"
-        onSelect={handleOnSelect}
-        visible={visibles["tue"]}
-        detail={isDetails}
-      />
-      <ShiftDay
-        weekDay="wed"
-        onSelect={handleOnSelect}
-        visible={visibles["wed"]}
-        detail={isDetails}
-      />
-      <ShiftDay
-        weekDay="thu"
-        onSelect={handleOnSelect}
-        visible={visibles["thu"]}
-        detail={isDetails}
-      />
-      <ShiftDay
-        weekDay="fri"
-        onSelect={handleOnSelect}
-        visible={visibles["fri"]}
-        detail={isDetails}
-      />
-      <ShiftDay
-        weekDay="sat"
-        onSelect={handleOnSelect}
-        visible={visibles["sat"]}
-        detail={isDetails}
-      />
-      <ShiftDay
-        weekDay="sun"
-        onSelect={handleOnSelect}
-        visible={visibles["sun"]}
-        detail={isDetails}
-      />
+      {days.map((wd) => (
+        <ShiftDay
+          key={days.indexOf(wd)}
+          weekDay={wd}
+          onSelect={handleOnSelect}
+          visible={visibles[wd]}
+          detail={isDetails}
+          contextMenu={props.contextMenu}
+        />
+      ))}
     </div>
   );
-}
+};
+export default ShiftWeek;

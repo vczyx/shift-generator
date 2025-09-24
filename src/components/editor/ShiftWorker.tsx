@@ -1,4 +1,4 @@
-import React, { Ref, useEffect, useRef, useState } from "react";
+import React, { Ref, RefObject, useEffect, useRef, useState } from "react";
 import {
   WeekDays,
   currentShiftData,
@@ -7,6 +7,7 @@ import {
 } from "../../data/Shift";
 import { PartTimeF } from "../../data/PartTime";
 import "../../styles/components/editor/ShiftWorker";
+import { ContextMenuHandle, ContextMenuItemData } from "../ContextMenu";
 
 /**
  * Worker Component Props 설정
@@ -16,6 +17,8 @@ export interface ShiftWorkerProps {
   workerId: number;
   error?: string;
   infoRef: React.RefObject<any>;
+  contextMenu: RefObject<ContextMenuHandle>;
+  contextMenuItems: ContextMenuItemData[];
 }
 
 export let currentWorkerId: number = -1;
@@ -30,6 +33,8 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
   workerId,
   error,
   infoRef,
+  contextMenu,
+  contextMenuItems,
 }) => {
   // 기본 정보를 가져옴
   error = error ?? "";
@@ -50,6 +55,7 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
   const [startTime, setStartTime] = useState(partTime.start);
   const [beforePartTime, setBeforePartTime] = useState(partTime);
   const [endTime, setEndTime] = useState(partTime.end);
+  const [zeroAnim, setZeroAnim] = useState(true);
   const [workingTime, setWorkingTime] = useState(
     PartTimeF.getWorkTime(partTime)
   );
@@ -148,6 +154,7 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
         setIsEditing(false);
     };
     window.addEventListener("onChangedGlobalEditing", handler);
+    setZeroAnim(false);
     return () => window.removeEventListener("onChangedGlobalEditing", handler);
   }, []);
 
@@ -223,6 +230,42 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
     }
   };
 
+  const handleOnContextMenu = (e: React.MouseEvent) => {
+    contextMenu.current?.open(
+      [
+        ...contextMenuItems,
+        { type: "bar" },
+        {
+          type: "label",
+          caption: curWorker.name,
+          child: [{ type: "label", caption: "TEst" }],
+        },
+        {
+          type: "button",
+          caption: isEditing ? "변경 사항 저장" : "시간 수정",
+          onClick: handleDoubleClick,
+        },
+        {
+          type: "button",
+          caption: "삭제",
+          onClick: () => {
+            setZeroAnim(true);
+            setTimeout(() => {
+              const workers = currentShiftData.week.days[day].workers;
+              currentShiftData.week.days[day].workers = Object.fromEntries(
+                Object.entries(workers).filter(
+                  ([id, _]) => parseInt(id) !== workerId
+                )
+              );
+              modifyShiftData();
+            }, 100);
+          },
+        },
+      ],
+      e
+    );
+  };
+
   // RENDERING
 
   return (
@@ -230,9 +273,14 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
       <div
         className="editor-shift-worker"
         onDoubleClick={handleDoubleClick}
+        onContextMenu={handleOnContextMenu}
         style={{
           backgroundImage: ShiftF.getRoleColorGradient(curWorker),
-          height: isEditing || errorMsg.length > 0 ? "90px" : "70px",
+          height: zeroAnim
+            ? "0px"
+            : isEditing || errorMsg.length > 0
+              ? "90px"
+              : "70px",
           borderColor: isEditing
             ? "blue"
             : errorMsg.length > 0
