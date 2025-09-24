@@ -322,11 +322,28 @@ export const ShiftF = {
     );
     return workers.length;
   },
+
+  /**
+   * 해당 요일에 해당하는 근무자의 실 근무 시간을 가져옵니다.
+   * @param wd 요일
+   * @param wId 근무자 ID
+   * @returns 해당 요일 근무자의 근무 시간
+   */
+  getWorkingTime: (wd: WeekDays, wId: number): number => {
+    const day = currentShiftData.week.days[wd];
+    return PartTimeF.getWorkTime(day.workers[wId]);
+  },
 };
 
 export let currentShiftData: Shift = TestShiftData;
 
-export const onModifiedShiftData = new CustomEvent("onModifiedShiftData");
+export const onModifiedShiftData = new CustomEvent("modifiedShiftData");
 export const modifyShiftData = () => {
   window.dispatchEvent(onModifiedShiftData);
+};
+
+export const setShiftData = (s: Shift | ((prev: Shift) => Shift)) => {
+  if (typeof s === "function") {
+  } else {
+  }
 };

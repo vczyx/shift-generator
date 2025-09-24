@@ -56,9 +56,13 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
   const [beforePartTime, setBeforePartTime] = useState(partTime);
   const [endTime, setEndTime] = useState(partTime.end);
   const [zeroAnim, setZeroAnim] = useState(true);
-  const [workingTime, setWorkingTime] = useState(
-    PartTimeF.getWorkTime(partTime)
-  );
+  const getWorkingTime = () => {
+    return (
+      Math.round(
+        PartTimeF.getWorkTime({ start: startTime, end: endTime }) * 10
+      ) / 10
+    );
+  };
 
   const setError = (msg: string, panel: boolean) => {
     setErrorMsg(msg);
@@ -77,19 +81,50 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
   const end = String(Math.floor(endTime)).padStart(2, "0");
   const endHalf = endTime - Math.floor(endTime);
 
+  const modifyErrorMsg = () => {
+    // 오류 메시지 출력
+
+    const totalWorkingTime = ShiftF.getTotalWorkingTime(workerId);
+    const workingTime = ShiftF.getWorkingTime(day, workerId);
+
+    // 0 시간 이하
+    if (workingTime <= 0) setError("0시간 이하", true);
+    // 법정 근로 시간 초과
+    else if (totalWorkingTime > roleData.limitUsageTime)
+      setError(`주 ${roleData.limitUsageTime}시간 초과`, true);
+    // 최대 근로 시간 초과
+    else if (totalWorkingTime > roleData.maxUsageTime)
+      setError(`주 ${roleData.maxUsageTime}시간 초과`, false);
+    // 하루 최대 근로 시간 초과
+    else if (workingTime > roleData.maxWorkingTime)
+      setError(`일 ${roleData.maxWorkingTime}시간 초과`, false);
+    // 오류 제거
+    else setError("", false);
+  };
+
   /**
    * Effect
    *
    * 조건 : PartTime 값이 수정되었을 때
    * 실행 : WorkingTime의 값을 수정 함
-   */
-  useEffect(() => {
-    setWorkingTime(
-      Math.round(
-        PartTimeF.getWorkTime({ start: startTime, end: endTime }) * 10
-      ) / 10
-    );
-  }, [startTime, endTime]);
+   *
+  // useEffect(() => {
+  //   setWorkingTime(
+  //     Math.round(
+  //       PartTimeF.getWorkTime({ start: startTime, end: endTime }) * 10
+  //     ) / 10
+  //   );
+  //   currentShiftData.week.days[day].workers[workerId] = {
+  //     start: startTime,
+  //     end: endTime,
+  //   };
+  //   modifyShiftData();
+  // }, [startTime, endTime]);
+  */
+
+  const handleOnModifiedShiftData = () => {
+    modifyErrorMsg();
+  };
 
   /**
    * Effect
@@ -120,25 +155,19 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
         end: endTime,
       };
       modifyShiftData();
-
-      // 오류 메시지 출력
-
-      const totalWorkingTime = ShiftF.getTotalWorkingTime(workerId);
-      // 0 시간 이하
-      if (workingTime <= 0) setError("0시간 이하", true);
-      // 법정 근로 시간 초과
-      else if (totalWorkingTime > roleData.limitUsageTime)
-        setError(`주 ${roleData.limitUsageTime}시간 초과`, true);
-      // 최대 근로 시간 초과
-      else if (totalWorkingTime > roleData.maxUsageTime)
-        setError(`주 ${roleData.maxUsageTime}시간 초과`, false);
-      // 하루 최대 근로 시간 초과
-      else if (workingTime > roleData.maxWorkingTime)
-        setError(`일 ${roleData.maxWorkingTime}시간 초과`, false);
-      // 오류 제거
-      else setError("", false);
     }
+
+    modifyErrorMsg();
   }, [isEditing]);
+
+  useEffect(() => {
+    window.addEventListener("modifiedShiftData", handleOnModifiedShiftData);
+    return () =>
+      window.removeEventListener(
+        "modifiedShiftData",
+        handleOnModifiedShiftData
+      );
+  }, []);
 
   /**
    * Effect
@@ -231,6 +260,7 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
   };
 
   const handleOnContextMenu = (e: React.MouseEvent) => {
+    console.log(curWorker.name, getWorkingTime());
     contextMenu.current?.open(
       [
         ...contextMenuItems,
@@ -238,7 +268,6 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
         {
           type: "label",
           caption: curWorker.name,
-          child: [{ type: "label", caption: "TEst" }],
         },
         {
           type: "button",
@@ -382,7 +411,9 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
               )}
             </div>
           </div>
-          <div className="editor-shift-worker-working">{workingTime}시간</div>
+          <div className="editor-shift-worker-working">
+            {getWorkingTime()}시간
+          </div>
         </div>
 
         <div

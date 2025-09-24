@@ -58,7 +58,7 @@ export const PartTimeF = {
    * @returns 해당 근무 파트의 총 시간
    */
   getTotalTime(pt: PartTime): number {
-    return pt.end - pt.start;
+    return (pt?.end ?? 0) - (pt?.start ?? 0);
   },
 
   /**
@@ -68,6 +68,6 @@ export const PartTimeF = {
    * @returns 해당 시간에 근무 중인지에 대한 여부
    */
   isWorking(pt: PartTime, hour: number) {
-    return hour >= pt.start && hour <= pt.end;
+    return hour >= (pt?.start ?? 0) && hour <= (pt?.end ?? 0);
   },
 };

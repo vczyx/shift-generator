@@ -98,10 +98,11 @@ const ShiftDay: React.FC<ShiftDayProps> = ({
     setWorkers(dayData.workers);
 
     // 차트 데이터 설정 (인원 사용 현황)
-    setChartHeight(Object.keys(dayData.workers).length * 50 + 20);
+    setChartHeight(Object.keys(dayData.workers).length * 44 + 100);
     setChartData({
       options: {
         responsive: true,
+        maintainAspectRatio: false, // 👈 비율 고정 해제
         indexAxis: "y" as const, // 👈 이 부분이 핵심!
         plugins: {
           legend: {
@@ -187,12 +188,15 @@ const ShiftDay: React.FC<ShiftDayProps> = ({
         },
       },
       data: {
-        labels: Object.keys(workers),
+        labels: Object.keys(dayData.workers),
         datasets: [
           {
             label: "근무 시간",
             type: "bar" as const,
-            data: Object.values(workers).map((pt) => [pt.start, pt.end]),
+            data: Object.values(dayData.workers).map((pt) => [
+              pt.start,
+              pt.end,
+            ]),
             backgroundColor: (context: any) => {
               const label = context.chart.data.labels?.[context.dataIndex];
               const meta = context.chart.getDatasetMeta(context.datasetIndex);
@@ -253,11 +257,11 @@ const ShiftDay: React.FC<ShiftDayProps> = ({
    *  실행 : window.onModifiedShiftData 커스텀 이벤트를 handleOnModifiedShiftData 핸들 지정
    */
   useEffect(() => {
-    window.addEventListener("onModifiedShiftData", handleOnModifiedShiftData);
+    window.addEventListener("modifiedShiftData", handleOnModifiedShiftData);
 
     return () =>
       window.removeEventListener(
-        "onModifiedShiftData",
+        "modifiedShiftData",
         handleOnModifiedShiftData
       );
   }, []);
@@ -292,6 +296,8 @@ const ShiftDay: React.FC<ShiftDayProps> = ({
       ...Object.entries(workers),
       [wId, { start: 0, end: 0 }],
     ]);
+    setWorkers(dayData.workers);
+    console.log(wId);
   };
 
   /**
@@ -311,12 +317,6 @@ const ShiftDay: React.FC<ShiftDayProps> = ({
           type: "button",
           caption: w.name,
           onClick: () => addWorker(parseInt(id)),
-          child: [
-            {
-              type: "label",
-              caption: "test",
-            },
-          ],
         })),
       },
       {
@@ -440,15 +440,18 @@ const ShiftDay: React.FC<ShiftDayProps> = ({
                 <div className="editor-shift-day-detail-header">
                   인원 사용 현황
                 </div>
-                <div className="editor-shift-day-detail-workercount">
+                <div
+                  className="editor-shift-day-detail-workercount"
+                  style={{ height: chartHeight, width: 1160 }}
+                >
                   {chartData && (
                     <Chart
                       type="bar"
+                      // key={chartKey}
                       ref={chartRef}
                       options={chartData?.options}
                       data={chartData?.data}
-                      height={chartHeight}
-                      width={1180}
+                      redraw
                     />
                   )}
                 </div>
