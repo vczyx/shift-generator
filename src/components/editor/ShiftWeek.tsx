@@ -6,6 +6,8 @@ import ContextMenu, {
   ContextMenuHandle,
   ContextMenuItemData,
 } from "../ContextMenu";
+import AddWorkerPanel from "./AddWorkerPanel";
+import { days } from "../../utils/util";
 
 // Props Interface
 interface ShiftWeekProps {
@@ -26,10 +28,10 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
   const [isDetails, setIsDetails] = useState(false);
   const [scrollTop, setScrollTop] = useState(0);
   const [maxHeight, setMaxHeight] = useState(0);
+  const [addPanelVisible, setAddPanelVisible] = useState(false);
   const dayRefs = useRef<(HTMLDivElement | null)[]>([]);
   const menuRef = useRef<ContextMenuHandle | null>(null);
 
-  const days: WeekDays[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
   const menus: {
     display: string;
     items?: ContextMenuItemData[];
@@ -37,7 +39,7 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
   }[] = [
     { display: "파일", items: [{ type: "button", caption: "asd" }] },
     { display: "편집", items: [{ type: "button", caption: "asd" }] },
-    { display: "근무자 추가" },
+    { display: "근무자 추가", onClick: () => setAddPanelVisible(true) },
     { display: "" },
   ];
 
@@ -123,6 +125,10 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
         </div>
       </div>
       <ContextMenu enabled ref={menuRef} />
+      <AddWorkerPanel
+        visible={addPanelVisible}
+        onExit={() => setAddPanelVisible(false)}
+      />
     </>
   );
 };

@@ -71,6 +71,16 @@ export const range = (
   );
 };
 
+export const days: WeekDays[] = [
+  "mon",
+  "tue",
+  "wed",
+  "thu",
+  "fri",
+  "sat",
+  "sun",
+];
+
 export const weekDayKor: Record<WeekDays, string> = {
   mon: "월",
   tue: "화",

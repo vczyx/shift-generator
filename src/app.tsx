@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { Route, HashRouter, Routes } from "react-router-dom";
 import NotFound from "./views/NotFound";
 import Editor from "./views/Editor";
-import TestView from "./test/TestView";
+// import TestView from "./test/TestView";
 import "./styles/App.css";
 import ContextMenu from "./components/ContextMenu";
 

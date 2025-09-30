@@ -53,3 +53,17 @@ body {
   background-color: #fff;
   color: #000;
 }
+
+.button {
+  transition: all 0.1s ease-in-out;
+  padding: 5px 20px;
+  background-color: #fff;
+}
+
+.button:hover {
+  background-color: #eee;
+}
+
+.button:active {
+  background-color: #aaa;
+}
