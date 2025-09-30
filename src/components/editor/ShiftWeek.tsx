@@ -1,4 +1,4 @@
-import React, { RefObject, useRef, useState } from "react";
+import React, { RefObject, WheelEventHandler, useRef, useState } from "react";
 import ShiftDay from "./ShiftDay";
 import "../../styles/components/editor/ShiftWeek.css";
 import { WeekDays } from "../../data/Shift";
@@ -21,6 +21,9 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
     sun: true,
   });
   const [isDetails, setIsDetails] = useState(false);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [maxHeight, setMaxHeight] = useState(0);
+  const dayRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const days: WeekDays[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
@@ -51,17 +54,43 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
     });
   };
 
+  const handleOnScroll = (e: React.WheelEvent<HTMLDivElement>) => {
+    // setScrollTop(e.)
+    // console.log(dayRefs.current);
+
+    const max = Math.max(
+      ...dayRefs.current.map((el) => el.scrollHeight - el.clientHeight)
+    );
+    if (maxHeight !== max) setMaxHeight(max);
+    setScrollTop((prev) => {
+      console.log("max", max);
+      console.log("cur", Math.min(Math.max(0, prev + e.deltaY), max));
+      return Math.min(Math.max(0, prev + e.deltaY), max);
+    });
+  };
+
   // RENDERRING
   return (
-    <div className="editor-shift-week">
-      {days.map((wd) => (
+    <div
+      className="editor-shift-week"
+      onWheel={handleOnScroll}
+      // onMouseDown={() => {
+      //   console.log(dayRefs.current);
+      // }}
+    >
+      {days.map((wd, index) => (
         <ShiftDay
-          key={days.indexOf(wd)}
+          key={index}
           weekDay={wd}
           onSelect={handleOnSelect}
           visible={visibles[wd]}
           detail={isDetails}
           contextMenu={props.contextMenu}
+          scrollTop={scrollTop}
+          ref={(el) => {
+            dayRefs.current[index] = el;
+          }}
+          maxHeight={maxHeight}
         />
       ))}
     </div>

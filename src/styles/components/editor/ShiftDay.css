@@ -10,6 +10,7 @@
 
   transition: all 0.1s ease-in-out;
   transition: width 0.2s ease-in-out;
+  height: 700px;
 }
 
 .editor-shift-day-header {
@@ -50,13 +51,17 @@
 .editor-shift-day-daywrapper {
   display: flex;
   flex-direction: column;
-  width: 200px;
+  width: 180px;
   height: 650px;
 }
 
 .editor-shift-day-workerwrapper {
-  overflow-y: scroll;
+  overflow-y: hidden;
   flex: 1;
+}
+
+.editor-shift-day-workerwrapper::-webkit-scrollbar {
+  display: none;
 }
 
 .editor-shift-day-footer {
@@ -106,13 +111,15 @@
   background-color: #cecece;
   flex: 1;
   display: flex;
-  overflow: hidden;
+  overflow-y: scroll;
+  height: 650px;
 }
 
 .editor-shift-day-detail {
   display: flex;
   flex-direction: column;
   flex: 1;
+  /* overflow-y: scroll; */
 
   margin: 10px;
 }
