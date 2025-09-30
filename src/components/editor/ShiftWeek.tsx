@@ -1,8 +1,11 @@
-import React, { RefObject, WheelEventHandler, useRef, useState } from "react";
+import React, { RefObject, useRef, useState } from "react";
 import ShiftDay from "./ShiftDay";
 import "../../styles/components/editor/ShiftWeek.css";
 import { WeekDays } from "../../data/Shift";
-import { ContextMenuHandle, ContextMenuProps } from "../ContextMenu";
+import ContextMenu, {
+  ContextMenuHandle,
+  ContextMenuItemData,
+} from "../ContextMenu";
 
 // Props Interface
 interface ShiftWeekProps {
@@ -24,8 +27,19 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
   const [scrollTop, setScrollTop] = useState(0);
   const [maxHeight, setMaxHeight] = useState(0);
   const dayRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const menuRef = useRef<ContextMenuHandle | null>(null);
 
   const days: WeekDays[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+  const menus: {
+    display: string;
+    items?: ContextMenuItemData[];
+    onClick?: () => void;
+  }[] = [
+    { display: "파일", items: [{ type: "button", caption: "asd" }] },
+    { display: "편집", items: [{ type: "button", caption: "asd" }] },
+    { display: "근무자 추가" },
+    { display: "" },
+  ];
 
   /**
    * Handle
@@ -55,9 +69,6 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
   };
 
   const handleOnScroll = (e: React.WheelEvent<HTMLDivElement>) => {
-    // setScrollTop(e.)
-    // console.log(dayRefs.current);
-
     const max = Math.max(
       ...dayRefs.current.map((el) => el.scrollHeight - el.clientHeight)
     );
@@ -71,29 +82,48 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
 
   // RENDERRING
   return (
-    <div
-      className="editor-shift-week"
-      onWheel={handleOnScroll}
-      // onMouseDown={() => {
-      //   console.log(dayRefs.current);
-      // }}
-    >
-      {days.map((wd, index) => (
-        <ShiftDay
-          key={index}
-          weekDay={wd}
-          onSelect={handleOnSelect}
-          visible={visibles[wd]}
-          detail={isDetails}
-          contextMenu={props.contextMenu}
-          scrollTop={scrollTop}
-          ref={(el) => {
-            dayRefs.current[index] = el;
-          }}
-          maxHeight={maxHeight}
-        />
-      ))}
-    </div>
+    <>
+      <div className="editor-shift-week" onWheel={handleOnScroll}>
+        <ul className="editor-shift-week-menuwrapper">
+          {menus.map((x, index) => (
+            <li
+              key={index}
+              onClick={(e) => {
+                if (x.items) {
+                  menuRef.current.openCustom(x.items, {
+                    x: e.currentTarget.offsetLeft,
+                    y: e.currentTarget.offsetTop + e.currentTarget.offsetHeight,
+                  });
+                }
+
+                if (x.onClick) x.onClick();
+              }}
+              className="editor-shift-week-menuitem"
+            >
+              {x.display}
+            </li>
+          ))}
+        </ul>
+        <div className="editor-shift-week-daywrapper">
+          {days.map((wd, index) => (
+            <ShiftDay
+              key={index}
+              weekDay={wd}
+              onSelect={handleOnSelect}
+              visible={visibles[wd]}
+              detail={isDetails}
+              contextMenu={props.contextMenu}
+              scrollTop={scrollTop}
+              ref={(el) => {
+                dayRefs.current[index] = el;
+              }}
+              maxHeight={maxHeight}
+            />
+          ))}
+        </div>
+      </div>
+      <ContextMenu enabled ref={menuRef} />
+    </>
   );
 };
 export default ShiftWeek;

@@ -1,4 +1,5 @@
 import React, {
+  DO_NOT_USE_OR_YOU_WILL_BE_FIRED_EXPERIMENTAL_REACT_NODES,
   RefObject,
   forwardRef,
   useEffect,
@@ -27,6 +28,10 @@ export interface ContextMenuProps {
 
 export interface ContextMenuHandle {
   open: (items: ContextMenuItemData[], e: React.MouseEvent) => void;
+  openCustom: (
+    items: ContextMenuItemData[],
+    position: { x: number; y: number }
+  ) => void;
 }
 
 const ContextMenu = forwardRef<ContextMenuHandle, ContextMenuProps>(
@@ -48,18 +53,22 @@ const ContextMenu = forwardRef<ContextMenuHandle, ContextMenuProps>(
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const divRef = useRef(null);
 
-    useImperativeHandle(ref, () => ({
-      open: (items, e) => {
+    const handles: ContextMenuHandle = {
+      openCustom: (items, pos) => {
         if (!items || items.length == 0) return;
-        // e.preventDefault();
-        e.stopPropagation();
         setVisible(false);
         setItems(items);
-        setPosition({ x: e.pageX, y: e.pageY });
+        setPosition(pos);
         setVisible(true);
         divRef.current?.focus({ preventScroll: true });
       },
-    }));
+      open: (items, e) => {
+        if (!items || items.length == 0) return;
+        e.stopPropagation();
+        handles.openCustom(items, { x: e.pageX, y: e.pageY });
+      },
+    };
+    useImperativeHandle(ref, () => handles);
 
     useLayoutEffect(() => {
       const newPositions = [...submenuPositions];

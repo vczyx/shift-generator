@@ -75,6 +75,9 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
     useRef<HTMLInputElement>(null),
   ];
 
+  const isFirstEdit = useRef<boolean>(false);
+  const isBlur = useRef<boolean>(true);
+
   // 화면에 표시할 정보 변수 선언
   const start = String(Math.floor(startTime)).padStart(2, "0");
   const startHalf = startTime - Math.floor(startTime);
@@ -137,6 +140,7 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
   useEffect(() => {
     if (isEditing) {
       // input start 요소 focus
+      isFirstEdit.current = true;
       inputRefs[0].current.focus();
 
       // 현재 수정 중인 컴포넌트의 정보를 저장 / 수정됨 이벤트 실행
@@ -295,6 +299,13 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
     );
   };
 
+  const handleOnBlur = () => {
+    setTimeout(() => {
+      if (isBlur.current) setIsEditing(false);
+      isBlur.current = true;
+    }, 0);
+  };
+
   // RENDERING
 
   return (
@@ -303,6 +314,7 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
         className="editor-shift-worker"
         onDoubleClick={handleDoubleClick}
         onContextMenu={handleOnContextMenu}
+        onBlur={handleOnBlur}
         style={{
           backgroundImage: ShiftF.getRoleColorGradient(curWorker),
           height: zeroAnim
@@ -364,7 +376,11 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
                     maxLength={2}
                     value={startTime}
                     onChange={(e) => handleTimeInputChange(e, setStartTime)}
-                    onFocus={(e) => e.target.select()}
+                    onFocus={(e) => {
+                      if (!isFirstEdit.current) isBlur.current = false;
+                      else isFirstEdit.current = false;
+                      e.target.select();
+                    }}
                     onKeyDown={(e) => handleEditingTime(e, 0)}
                   ></input>
                 </>
@@ -393,7 +409,11 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
                     maxLength={2}
                     value={endTime}
                     onChange={(e) => handleTimeInputChange(e, setEndTime)}
-                    onFocus={(x) => x.target.select()}
+                    onFocus={(e) => {
+                      if (!isFirstEdit.current) isBlur.current = false;
+                      else isFirstEdit.current = false;
+                      e.target.select();
+                    }}
                     onKeyDown={(e) => handleEditingTime(e, 1)}
                   ></input>
                 </>
