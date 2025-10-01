@@ -333,6 +333,19 @@ export const ShiftF = {
     const day = currentShiftData.week.days[wd];
     return PartTimeF.getWorkTime(day.workers[wId]);
   },
+
+  /**
+   * 해당 요일에 근무자를 추가합니다.
+   * @param wd 요일
+   * @param wId 근무자 ID
+   */
+  addWorker: (wd: WeekDays, wId: number, pt?: PartTime): void => {
+    const workers = currentShiftData.week.days[wd].workers;
+    currentShiftData.week.days[wd].workers = Object.fromEntries([
+      ...Object.entries(workers),
+      [wId, pt ?? { start: 0, end: 0 }],
+    ]);
+  },
 };
 
 export let currentShiftData: Shift = TestShiftData;

@@ -57,13 +57,14 @@ body {
 .button {
   transition: all 0.1s ease-in-out;
   padding: 5px 20px;
-  background-color: #fff;
+  cursor: pointer;
+  background-color: white;
 }
 
 .button:hover {
-  background-color: #eee;
+  filter: brightness(0.85);
 }
 
 .button:active {
-  background-color: #aaa;
+  filter: brightness(0.7);
 }

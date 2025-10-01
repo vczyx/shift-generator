@@ -4,9 +4,10 @@ import React, {
   useEffect,
   useRef,
   useState,
+  useImperativeHandle,
 } from "react";
 import { ShiftF, WeekDays, currentShiftData } from "../../data/Shift";
-import ShiftWorker, { currentWorkerId } from "./ShiftWorker";
+import ShiftWorker from "./ShiftWorker";
 import { addDays, format } from "date-fns";
 import "../../styles/components/editor/ShiftDay.css";
 import ShiftWorkerInfo from "./ShiftWorkerInfo";
@@ -52,6 +53,13 @@ export interface ShiftDayProps {
   contextMenu: RefObject<ContextMenuHandle>;
   scrollTop: number;
   maxHeight: number;
+  infoRef: RefObject<any>;
+  openAddPanel: (wd?: WeekDays) => void;
+}
+
+export interface ShiftDayHandle {
+  refresh: () => void;
+  workerRef: RefObject<HTMLDivElement>;
 }
 
 const weekDayDateAdd: Record<WeekDays, number> = {
@@ -64,9 +72,19 @@ const weekDayDateAdd: Record<WeekDays, number> = {
   sun: 6,
 };
 
-const ShiftDay = forwardRef<HTMLDivElement, ShiftDayProps>(
+const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
   (
-    { weekDay, onSelect, visible, detail, contextMenu, scrollTop, maxHeight },
+    {
+      weekDay,
+      onSelect,
+      visible,
+      detail,
+      contextMenu,
+      scrollTop,
+      maxHeight,
+      infoRef,
+      openAddPanel,
+    },
     ref
   ) => {
     // 기본 정보 설정
@@ -91,9 +109,17 @@ const ShiftDay = forwardRef<HTMLDivElement, ShiftDayProps>(
     const [chartHeight, setChartHeight] = useState(0);
 
     // REFS
-    const infoRef = useRef<any>(null);
     const chartRef = useRef<any>(null);
     const workerWrapperRef = useRef<HTMLDivElement>(null);
+
+    const handlers: ShiftDayHandle = {
+      refresh: () => {
+        setWorkers(dayData.workers);
+      },
+      workerRef: useRef<HTMLDivElement>(null),
+    };
+
+    useImperativeHandle(ref, () => handlers);
 
     /**
      * Handle
@@ -331,13 +357,8 @@ const ShiftDay = forwardRef<HTMLDivElement, ShiftDayProps>(
      * @param wId 근무자 ID
      */
     const addWorker = (wId: number) => {
-      const workers = currentShiftData.week.days[weekDay].workers;
-      currentShiftData.week.days[weekDay].workers = Object.fromEntries([
-        ...Object.entries(workers),
-        [wId, { start: 0, end: 0 }],
-      ]);
+      ShiftF.addWorker(weekDay, wId);
       setWorkers(dayData.workers);
-      console.log(wId);
     };
 
     /**
@@ -353,11 +374,12 @@ const ShiftDay = forwardRef<HTMLDivElement, ShiftDayProps>(
         {
           type: "button",
           caption: "추가",
-          child: Object.entries(currentShiftData.workers).map(([id, w]) => ({
-            type: "button",
-            caption: w.name,
-            onClick: () => addWorker(parseInt(id)),
-          })),
+          // child: Object.entries(currentShiftData.workers).map(([id, w]) => ({
+          //   type: "button",
+          //   caption: w.name,
+          //   onClick: () => addWorker(parseInt(id)),
+          // })),
+          onClick: () => openAddPanel(weekDay),
         },
         {
           type: "button",
@@ -417,11 +439,7 @@ const ShiftDay = forwardRef<HTMLDivElement, ShiftDayProps>(
               <div
                 className="editor-shift-day-workerwrapper"
                 ref={(el) => {
-                  if (typeof ref === "function") {
-                    ref(el); // 콜백 ref일 경우
-                  } else if (ref && "current" in ref) {
-                    ref.current = el; // 객체 ref일 경우
-                  }
+                  handlers.workerRef.current = el;
                   workerWrapperRef.current = el;
                 }}
               >
@@ -527,7 +545,6 @@ const ShiftDay = forwardRef<HTMLDivElement, ShiftDayProps>(
             </div>
           </div>
         </div>
-        <ShiftWorkerInfo ref={infoRef} getWId={() => currentWorkerId} />
       </>
     );
   }

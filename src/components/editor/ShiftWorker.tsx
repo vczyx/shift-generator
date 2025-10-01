@@ -22,6 +22,9 @@ export interface ShiftWorkerProps {
 }
 
 export let currentWorkerId: number = -1;
+export function setCurrentWorkerId(id: number) {
+  currentWorkerId = id;
+}
 export let globalEditing: {
   day: WeekDays;
   workerId: number;

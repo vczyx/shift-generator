@@ -1,5 +1,5 @@
 import React, { RefObject, useRef, useState } from "react";
-import ShiftDay from "./ShiftDay";
+import ShiftDay, { ShiftDayHandle } from "./ShiftDay";
 import "../../styles/components/editor/ShiftWeek.css";
 import { WeekDays } from "../../data/Shift";
 import ContextMenu, {
@@ -8,6 +8,8 @@ import ContextMenu, {
 } from "../ContextMenu";
 import AddWorkerPanel from "./AddWorkerPanel";
 import { days } from "../../utils/util";
+import { currentWorkerId } from "./ShiftWorker";
+import ShiftWorkerInfo from "./ShiftWorkerInfo";
 
 // Props Interface
 interface ShiftWeekProps {
@@ -29,8 +31,14 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
   const [scrollTop, setScrollTop] = useState(0);
   const [maxHeight, setMaxHeight] = useState(0);
   const [addPanelVisible, setAddPanelVisible] = useState(false);
-  const dayRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [addPanelSelectedWd, setAddPanelSelectedWd] = useState<WeekDays>("mon");
+  const dayRefs = useRef<(ShiftDayHandle | null)[]>([]);
   const menuRef = useRef<ContextMenuHandle | null>(null);
+
+  const openAddPanel = (wd?: WeekDays) => {
+    setAddPanelSelectedWd(wd ?? "mon");
+    setAddPanelVisible(true);
+  };
 
   const menus: {
     display: string;
@@ -39,9 +47,11 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
   }[] = [
     { display: "파일", items: [{ type: "button", caption: "asd" }] },
     { display: "편집", items: [{ type: "button", caption: "asd" }] },
-    { display: "근무자 추가", onClick: () => setAddPanelVisible(true) },
+    { display: "근무자 추가", onClick: openAddPanel },
     { display: "" },
   ];
+
+  const infoRef = useRef<any>(null);
 
   /**
    * Handle
@@ -72,7 +82,10 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
 
   const handleOnScroll = (e: React.WheelEvent<HTMLDivElement>) => {
     const max = Math.max(
-      ...dayRefs.current.map((el) => el.scrollHeight - el.clientHeight)
+      ...dayRefs.current.map(
+        (el) =>
+          el.workerRef.current.scrollHeight - el.workerRef.current.clientHeight
+      )
     );
     if (maxHeight !== max) setMaxHeight(max);
     setScrollTop((prev) => {
@@ -120,6 +133,8 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
                 dayRefs.current[index] = el;
               }}
               maxHeight={maxHeight}
+              infoRef={infoRef}
+              openAddPanel={openAddPanel}
             />
           ))}
         </div>
@@ -128,7 +143,11 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
       <AddWorkerPanel
         visible={addPanelVisible}
         onExit={() => setAddPanelVisible(false)}
+        infoRef={infoRef}
+        dayRefs={dayRefs}
+        selectedWdState={[addPanelSelectedWd, setAddPanelSelectedWd]}
       />
+      <ShiftWorkerInfo ref={infoRef} getWId={() => currentWorkerId} />
     </>
   );
 };
