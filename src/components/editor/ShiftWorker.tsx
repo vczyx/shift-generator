@@ -1,11 +1,6 @@
 import React, { Ref, RefObject, useEffect, useRef, useState } from "react";
-import {
-  WeekDays,
-  currentShiftData,
-  ShiftF,
-  modifyShiftData,
-} from "../../data/Shift";
-import { PartTimeF } from "../../data/PartTime";
+import ShiftF from "../../data/ShiftF";
+import PartTimeF from "../../data/PartTimeF";
 import "../../styles/components/editor/ShiftWorker";
 import { ContextMenuHandle, ContextMenuItemData } from "../ContextMenu";
 
@@ -19,6 +14,8 @@ export interface ShiftWorkerProps {
   infoRef: React.RefObject<any>;
   contextMenu: RefObject<ContextMenuHandle>;
   contextMenuItems: ContextMenuItemData[];
+  shiftInfo: ShiftInformation;
+  setShiftData: (data: Shift) => void;
 }
 
 export let currentWorkerId: number = -1;
@@ -38,13 +35,15 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
   infoRef,
   contextMenu,
   contextMenuItems,
+  shiftInfo,
+  setShiftData,
 }) => {
   // 기본 정보를 가져옴
   error = error ?? "";
-  const curDay = currentShiftData.week.days[day];
-  const curWorker = ShiftF.getWorker(workerId);
+  const curDay = shiftInfo.shift.week.days[day];
+  const curWorker = ShiftF.getWorker(shiftInfo, workerId);
   const name = curWorker.name;
-  const roleData = ShiftF.getRoleData(curWorker);
+  const roleData = ShiftF.getRoleData(shiftInfo, curWorker);
   const partTime = curDay.workers[workerId];
 
   // 색 설정
@@ -62,7 +61,8 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
   const getWorkingTime = () => {
     return (
       Math.round(
-        PartTimeF.getWorkTime({ start: startTime, end: endTime }) * 10
+        PartTimeF.getWorkTime(shiftInfo, { start: startTime, end: endTime }) *
+          10
       ) / 10
     );
   };
@@ -90,8 +90,8 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
   const modifyErrorMsg = () => {
     // 오류 메시지 출력
 
-    const totalWorkingTime = ShiftF.getTotalWorkingTime(workerId);
-    const workingTime = ShiftF.getWorkingTime(day, workerId);
+    const totalWorkingTime = ShiftF.getTotalWorkingTime(shiftInfo, workerId);
+    const workingTime = ShiftF.getWorkingTime(shiftInfo, day, workerId);
 
     // 0 시간 이하
     if (workingTime <= 0) setError("0시간 이하", true);
@@ -157,11 +157,12 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
       setEndTime((p) => Math.min(Math.max(startTime, p), 48));
 
       // 변경 사항 저장
-      currentShiftData.week.days[day].workers[workerId] = {
+      const x = { ...shiftInfo.shift };
+      x.week.days[day].workers[workerId] = {
         start: startTime,
         end: endTime,
       };
-      modifyShiftData();
+      setShiftData(x);
     }
 
     modifyErrorMsg();
@@ -287,13 +288,13 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
           onClick: () => {
             setZeroAnim(true);
             setTimeout(() => {
-              const workers = currentShiftData.week.days[day].workers;
-              currentShiftData.week.days[day].workers = Object.fromEntries(
-                Object.entries(workers).filter(
+              const x = { ...shiftInfo.shift };
+              x.week.days[day].workers = Object.fromEntries(
+                Object.entries(x.week.days[day].workers).filter(
                   ([id, _]) => parseInt(id) !== workerId
                 )
               );
-              modifyShiftData();
+              setShiftData(x);
             }, 100);
           },
         },
@@ -319,7 +320,7 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
         onContextMenu={handleOnContextMenu}
         onBlur={handleOnBlur}
         style={{
-          backgroundImage: ShiftF.getRoleColorGradient(curWorker),
+          backgroundImage: ShiftF.getRoleColorGradient(shiftInfo, curWorker),
           height: zeroAnim
             ? "0px"
             : isEditing || errorMsg.length > 0

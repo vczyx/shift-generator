@@ -1,4 +1,6 @@
 {
+  "nodeIntegration": false,
+  "contextIsolation": true,
   "compilerOptions": {
     "target": "ES6",
     "allowJs": true,

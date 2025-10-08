@@ -6,7 +6,7 @@ import React, {
   useState,
 } from "react";
 import "../../styles/components/editor/ShiftWorkerInfo.css";
-import { ShiftF, currentShiftData } from "../../data/Shift";
+import ShiftF from "../../data/ShiftF";
 import { format } from "date-fns";
 import { currentWorkerId } from "./ShiftWorker";
 import { weekDayKor } from "../../utils/util";
@@ -15,13 +15,17 @@ import { currentConfig } from "../../data/Config";
 // Props Interface
 interface ShiftWorkerInfoProps {
   getWId: () => number;
+  shiftInfo: ShiftInformation;
+  setShiftData: (data: Shift) => void;
 }
 
 const ShiftWorkerInfo = forwardRef<unknown, ShiftWorkerInfoProps>(
   (props, ref) => {
     // 기본 값
-    const worker = ShiftF.getWorker(props.getWId());
-    const roleData = worker ? ShiftF.getRoleData(worker) : null;
+    const worker = ShiftF.getWorker(props.shiftInfo, props.getWId());
+    const roleData = worker
+      ? ShiftF.getRoleData(props.shiftInfo, worker)
+      : null;
 
     // Ref 설정
     const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -115,7 +119,10 @@ const ShiftWorkerInfo = forwardRef<unknown, ShiftWorkerInfoProps>(
                     <p
                       className="editor-shift-workerinfo-rolecard"
                       style={{
-                        background: ShiftF.getRoleColorGradient(worker),
+                        background: ShiftF.getRoleColorGradient(
+                          props.shiftInfo,
+                          worker
+                        ),
                       }}
                     >
                       {roleData.nickname}
@@ -126,7 +133,7 @@ const ShiftWorkerInfo = forwardRef<unknown, ShiftWorkerInfoProps>(
                   <th>담당 구역</th>
                   <td>
                     {
-                      currentConfig.Restaurant.multiPositionDisplay[
+                      currentConfig.Brand.multiPositionDisplay[
                         worker.position.length
                       ]
                     }
@@ -160,17 +167,26 @@ const ShiftWorkerInfo = forwardRef<unknown, ShiftWorkerInfoProps>(
                 </tr>
                 <tr>
                   <th>현재 주 근로</th>
-                  <td>{ShiftF.getTotalWorkingTime(currentWorkerId)}h</td>
+                  <td>
+                    {ShiftF.getTotalWorkingTime(
+                      props.shiftInfo,
+                      currentWorkerId
+                    )}
+                    h
+                  </td>
                 </tr>
                 <tr>
                   <th>근무 요일</th>
                   <td>
-                    {ShiftF.getWorkWeekdays(currentWorkerId).map((wd) => (
+                    {ShiftF.getWorkWeekdays(
+                      props.shiftInfo,
+                      currentWorkerId
+                    ).map((wd) => (
                       <p
                         className="editor-shift-workerinfo-wdcard"
                         key={wd}
                         style={{
-                          background: currentShiftData.week.days[wd].color,
+                          background: props.shiftInfo.shift.week.days[wd].color,
                         }}
                       >
                         {weekDayKor[wd]}

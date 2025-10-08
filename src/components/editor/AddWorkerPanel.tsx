@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import "../../styles/components/editor/AddWorkerPanel.css";
 import { days, weekDayKor } from "../../utils/util";
-import { ShiftF, WeekDays, currentShiftData } from "../../data/Shift";
+import ShiftF from "../../data/ShiftF";
 import { setCurrentWorkerId } from "./ShiftWorker";
 import { ShiftDayHandle } from "./ShiftDay";
 
@@ -17,6 +17,8 @@ interface AddWorkerPanelProps {
   infoRef: RefObject<any>;
   dayRefs: RefObject<(ShiftDayHandle | null)[]>;
   selectedWdState: [WeekDays, React.Dispatch<React.SetStateAction<WeekDays>>];
+  shiftInfo: ShiftInformation;
+  setShiftData: (data: Shift) => void;
 }
 
 interface AddWorkerPanelHandle {
@@ -24,7 +26,18 @@ interface AddWorkerPanelHandle {
 }
 
 const AddWorkerPanel = forwardRef<AddWorkerPanelHandle, AddWorkerPanelProps>(
-  ({ visible, onExit, infoRef, dayRefs, selectedWdState }, ref) => {
+  (
+    {
+      visible,
+      onExit,
+      infoRef,
+      dayRefs,
+      selectedWdState,
+      shiftInfo,
+      setShiftData,
+    },
+    ref
+  ) => {
     const [selectedWd, setSelectedWd] = selectedWdState;
     const [, forceLoad] = useReducer((e) => e + 1, 0);
     useImperativeHandle(ref, () => ({
@@ -62,9 +75,9 @@ const AddWorkerPanel = forwardRef<AddWorkerPanelHandle, AddWorkerPanelProps>(
             ))}
           </ul>
           <ul className="editor-addworker-workerwrapper">
-            {Object.entries(currentShiftData.workers).map(([wId, w], index) => {
+            {Object.entries(shiftInfo.shift.workers).map(([wId, w], index) => {
               const enabled = !(
-                wId in currentShiftData.week.days[selectedWd].workers
+                wId in shiftInfo.shift.week.days[selectedWd].workers
               );
 
               return (
@@ -72,7 +85,7 @@ const AddWorkerPanel = forwardRef<AddWorkerPanelHandle, AddWorkerPanelProps>(
                   key={index}
                   className={enabled ? "button" : undefined}
                   style={{
-                    backgroundImage: ShiftF.getRoleColorGradient(w),
+                    backgroundImage: ShiftF.getRoleColorGradient(shiftInfo, w),
                     filter: enabled ? undefined : "brightness(0.5)",
                   }}
                   onMouseEnter={(e) => {
@@ -85,7 +98,9 @@ const AddWorkerPanel = forwardRef<AddWorkerPanelHandle, AddWorkerPanelProps>(
                   }}
                   onClick={() => {
                     if (!enabled) return;
-                    ShiftF.addWorker(selectedWd, parseInt(wId));
+                    setShiftData(
+                      ShiftF.addWorker(shiftInfo, selectedWd, parseInt(wId))
+                    );
                     dayRefs.current[days.indexOf(selectedWd)].refresh();
                     forceLoad();
                     onExit();

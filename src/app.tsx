@@ -6,6 +6,15 @@ import Editor from "./views/Editor";
 // import TestView from "./test/TestView";
 import "./styles/App.css";
 import ContextMenu from "./components/ContextMenu";
+import Main from "./views/Main";
+
+// declare global {
+//   interface Window {
+//     electron: {
+//       openFile: () => Promise<string | null>;
+//     };
+//   }
+// }
 
 const App = () => {
   const contextMenuRef = useRef<any>(null);
@@ -14,8 +23,11 @@ const App = () => {
     <div>
       <HashRouter>
         <Routes>
-          <Route path="/" element={<Editor contextMenu={contextMenuRef} />} />
-          <Route path="/editor" element={<Editor />} />
+          <Route path="/" element={<Main />} />
+          <Route
+            path="/editor/:brand/:area/:restaurant/:shift"
+            element={<Editor />}
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </HashRouter>

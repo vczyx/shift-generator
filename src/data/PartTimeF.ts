@@ -1,29 +1,21 @@
 import util from "../utils/util";
-import { currentConfig } from "./Config";
-/**
- * 근무 파트를 지정하는 인터페이스.
- */
-export interface PartTime {
-  start: number;
-  end: number;
-}
 
 /**
  * PartTime 데이터와 관련된 확장 함수들을 제공합니다.
  */
-export const PartTimeF = {
+const PartTimeF = {
   /**
    * PartTime의 휴게 시간을 가져옵니다.
    * @param pt 근무 파트
    * @returns 해당 근무 파트의 휴게 시간
    */
-  getRestTime(pt: PartTime): number {
+  getRestTime(s: ShiftInformation, pt: PartTime): number {
     let time = PartTimeF.getTotalTime(pt);
     let restTimeTotal = 0;
 
     // 휴게 시간 계산
-    for (let i = 0; i < currentConfig.Restaurant.restTime.length; i++) {
-      const rtCfg = currentConfig.Restaurant.restTime[i];
+    for (let i = 0; i < s.brandConfig.restTime.length; i++) {
+      const rtCfg = s.brandConfig.restTime[i];
 
       // RestTime Config 중 조건에 맞는지 확인
       if (util.stropIf(time, rtCfg.operator, rtCfg.condition)) {
@@ -48,8 +40,8 @@ export const PartTimeF = {
    * @param pt 근무 파트
    * @returns 해당 근무 파트의 실근무 시간
    */
-  getWorkTime(pt: PartTime): number {
-    return PartTimeF.getTotalTime(pt) - PartTimeF.getRestTime(pt);
+  getWorkTime(s: ShiftInformation, pt: PartTime): number {
+    return PartTimeF.getTotalTime(pt) - PartTimeF.getRestTime(s, pt);
   },
 
   /**
@@ -71,3 +63,4 @@ export const PartTimeF = {
     return hour >= (pt?.start ?? 0) && hour <= (pt?.end ?? 0);
   },
 };
+export default PartTimeF;

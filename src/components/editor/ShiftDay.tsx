@@ -6,14 +6,14 @@ import React, {
   useState,
   useImperativeHandle,
 } from "react";
-import { ShiftF, WeekDays, currentShiftData } from "../../data/Shift";
+import ShiftF from "../../data/ShiftF";
 import ShiftWorker from "./ShiftWorker";
 import { addDays, format } from "date-fns";
 import "../../styles/components/editor/ShiftDay.css";
 import ShiftWorkerInfo from "./ShiftWorkerInfo";
 import { weekDayKor } from "../../utils/util";
 import { currentConfig } from "../../data/Config";
-import { PartTimeF } from "../../data/PartTime";
+import PartTimeF from "../../data/PartTimeF";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 
 import {
@@ -55,6 +55,8 @@ export interface ShiftDayProps {
   maxHeight: number;
   infoRef: RefObject<any>;
   openAddPanel: (wd?: WeekDays) => void;
+  shiftInfo: ShiftInformation;
+  setShiftData: (data: Shift) => void;
 }
 
 export interface ShiftDayHandle {
@@ -84,13 +86,15 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
       maxHeight,
       infoRef,
       openAddPanel,
+      shiftInfo,
+      setShiftData,
     },
     ref
   ) => {
     // 기본 정보 설정
-    const dayData = currentShiftData.week.days[weekDay];
+    const dayData = shiftInfo.shift.week.days[weekDay];
     const curDate = format(
-      addDays(currentShiftData.firstDate, weekDayDateAdd[weekDay]),
+      addDays(shiftInfo.shift.firstDate, weekDayDateAdd[weekDay]),
       "MM/dd"
     );
 
@@ -150,12 +154,12 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
               font: { size: 14, weight: "bold" },
               formatter: (value: any, context: any) => {
                 const label = context.chart.data.labels?.[context.dataIndex];
-                const w = ShiftF.getWorker(label);
-                const roleData = ShiftF.getRoleData(w);
+                const w = ShiftF.getWorker(shiftInfo, label);
+                const roleData = ShiftF.getRoleData(shiftInfo, w);
                 const pt = { start: value[0], end: value[1] };
                 return [
                   `[ ${roleData.nickname} ] ${w.name} (${w.position.join(", ")})`,
-                  `${pt.start} - ${pt.end} ( ${PartTimeF.getWorkTime(pt)} )`,
+                  `${pt.start} - ${pt.end} ( ${PartTimeF.getWorkTime(shiftInfo, pt)} )`,
                 ]; // 줄바꿈
               },
             },
@@ -164,18 +168,24 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
               callbacks: {
                 // 제목 (이름)
                 title: (context) => {
-                  const w = ShiftF.getWorker(parseInt(context[0].label));
+                  const w = ShiftF.getWorker(
+                    shiftInfo,
+                    parseInt(context[0].label)
+                  );
                   if (!w)
                     return `예기치 않은 오류로 정보를 표시할 수 없습니다.`;
                   return w.name;
                 },
                 // 내용 (직급, 담당 포지션)
                 beforeBody: (context) => {
-                  const w = ShiftF.getWorker(parseInt(context[0].label));
+                  const w = ShiftF.getWorker(
+                    shiftInfo,
+                    parseInt(context[0].label)
+                  );
                   if (!w)
                     return `예기치 않은 오류로 정보를 표시할 수 없습니다.`;
-                  const roleData = ShiftF.getRoleData(w);
-                  const posData = currentConfig.Restaurant.multiPositionDisplay;
+                  const roleData = ShiftF.getRoleData(shiftInfo, w);
+                  const posData = currentConfig.Brand.multiPositionDisplay;
                   return [
                     `[ 직급 ]   ${roleData.nickname}`,
                     `[ 담당 구역 ]   ${posData[w.position.length]} (${w.position.join("+")})`,
@@ -187,14 +197,17 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
                 label: (context) => {
                   const value = context.parsed.y;
                   const label = context.dataset.label || "";
-                  const w = ShiftF.getWorker(parseInt(context.label));
+                  const w = ShiftF.getWorker(
+                    shiftInfo,
+                    parseInt(context.label)
+                  );
                   if (!w)
                     return `예기치 않은 오류로 정보를 표시할 수 없습니다.`;
-                  const roleData = ShiftF.getRoleData(w);
+                  const roleData = ShiftF.getRoleData(shiftInfo, w);
                   // 원하는 설명 추가
                   const data = context.raw as number[];
                   const pt = { start: data[0], end: data[1] };
-                  return `[IN] ${pt.start}   [OUT] ${pt.end}   [WORK] ${PartTimeF.getWorkTime(pt)}`;
+                  return `[IN] ${pt.start}   [OUT] ${pt.end}   [WORK] ${PartTimeF.getWorkTime(shiftInfo, pt)}`;
                 },
               },
             },
@@ -209,14 +222,15 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
                 stepSize: 1,
                 callback: (value) => {
                   const workerCount = ShiftF.getWorkerCount(
+                    shiftInfo,
                     weekDay,
                     parseInt(value.toString())
                   );
                   return [`${value}시`, `(${workerCount}명)`];
                 },
               },
-              min: currentConfig.Restaurant.operatingStart,
-              max: currentConfig.Restaurant.operatingEnd,
+              min: currentConfig.Brand.operatingStart,
+              max: currentConfig.Brand.operatingEnd,
             },
             y: {
               display: false,
@@ -238,9 +252,9 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
                 const meta = context.chart.getDatasetMeta(context.datasetIndex);
                 const bar = meta.data[context.dataIndex];
                 const ctx = context.chart.ctx; // CanvasRenderingContext2D
-                const w = ShiftF.getWorker(label);
+                const w = ShiftF.getWorker(shiftInfo, label);
                 if (!w) return "white";
-                const roleData = w ? ShiftF.getRoleData(w) : null;
+                const roleData = w ? ShiftF.getRoleData(shiftInfo, w) : null;
                 const x = bar?.x ?? 0;
                 const y = bar?.y ?? 0;
 
@@ -267,21 +281,6 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
       });
     };
 
-    /**
-     * Handle
-     *
-     *  조건 : window.onModifiedShiftData 커스텀 이벤트가 실행 되었을 때
-     *  실행 : handleOnChangedWorkers 실행, SMH 계산
-     */
-    const handleOnModifiedShiftData = () => {
-      handleOnChangedWorkers();
-      setPlannedUsage(() => {
-        const plan = ShiftF.getWeekPlannedUsageTime(weekDay);
-        setSmh(plan > 0 ? (expectedSale * 1000) / plan : 0);
-        return plan;
-      });
-    };
-
     const handleOnDoubleClick = () => {
       onSelect(weekDay, true);
     };
@@ -289,28 +288,17 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
     /**
      * Effect
      *
-     *  조건 : 렌더링 시작
-     *  실행 : window.onModifiedShiftData 커스텀 이벤트를 handleOnModifiedShiftData 핸들 지정
+     *  조건 : shiftInfo 값 변동
+     *  실행 :
      */
     useEffect(() => {
-      window.addEventListener("modifiedShiftData", handleOnModifiedShiftData);
-
-      return () =>
-        window.removeEventListener(
-          "modifiedShiftData",
-          handleOnModifiedShiftData
-        );
-    }, []);
-
-    /**
-     * Effect
-     *
-     *  조건 : 예상 매출 값이 수정되었을 때
-     *  실행 : onModifiedShiftData 실행
-     */
-    useEffect(() => {
-      handleOnModifiedShiftData();
-    }, [expectedSale]);
+      handleOnChangedWorkers();
+      setPlannedUsage(() => {
+        const plan = ShiftF.getWeekPlannedUsageTime(shiftInfo, weekDay);
+        setSmh(plan > 0 ? (expectedSale * 1000) / plan : 0);
+        return plan;
+      });
+    }, [shiftInfo, expectedSale]);
 
     /**
      * Effect
@@ -319,7 +307,9 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
      *  실행 : ShiftData 값 수정
      */
     useEffect(() => {
-      currentShiftData.week.days[weekDay].descriptions = desc;
+      const x = { ...shiftInfo.shift };
+      x.week.days[weekDay].descriptions = desc;
+      setShiftData(x);
     }, [desc]);
 
     // useEffect(() => {
@@ -357,7 +347,7 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
      * @param wId 근무자 ID
      */
     const addWorker = (wId: number) => {
-      ShiftF.addWorker(weekDay, wId);
+      ShiftF.addWorker(shiftInfo, weekDay, wId);
       setWorkers(dayData.workers);
     };
 
@@ -456,6 +446,8 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
                         infoRef={infoRef}
                         contextMenu={contextMenu}
                         contextMenuItems={getContextMenuItems()}
+                        shiftInfo={shiftInfo}
+                        setShiftData={setShiftData}
                       />
                     </li>
                   ))}

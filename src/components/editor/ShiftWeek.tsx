@@ -1,7 +1,6 @@
-import React, { RefObject, useRef, useState } from "react";
+import React, { RefObject, useEffect, useRef, useState } from "react";
 import ShiftDay, { ShiftDayHandle } from "./ShiftDay";
 import "../../styles/components/editor/ShiftWeek.css";
-import { WeekDays } from "../../data/Shift";
 import ContextMenu, {
   ContextMenuHandle,
   ContextMenuItemData,
@@ -14,6 +13,8 @@ import ShiftWorkerInfo from "./ShiftWorkerInfo";
 // Props Interface
 interface ShiftWeekProps {
   contextMenu: RefObject<ContextMenuHandle>;
+  shiftInfo: ShiftInformation;
+  setShiftData: (data: Shift) => void;
 }
 
 const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
@@ -48,7 +49,12 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
     { display: "파일", items: [{ type: "button", caption: "asd" }] },
     { display: "편집", items: [{ type: "button", caption: "asd" }] },
     { display: "근무자 추가", onClick: openAddPanel },
-    { display: "" },
+    {
+      display: "",
+      onClick: () => {
+        window.alert(__dirname);
+      },
+    },
   ];
 
   const infoRef = useRef<any>(null);
@@ -125,7 +131,7 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
               key={index}
               weekDay={wd}
               onSelect={handleOnSelect}
-              visible={visibles[wd]}
+              visible={visibles[wd as WeekDays]}
               detail={isDetails}
               contextMenu={props.contextMenu}
               scrollTop={scrollTop}
@@ -135,6 +141,8 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
               maxHeight={maxHeight}
               infoRef={infoRef}
               openAddPanel={openAddPanel}
+              setShiftData={props.setShiftData}
+              shiftInfo={props.shiftInfo}
             />
           ))}
         </div>
@@ -146,8 +154,15 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
         infoRef={infoRef}
         dayRefs={dayRefs}
         selectedWdState={[addPanelSelectedWd, setAddPanelSelectedWd]}
+        setShiftData={props.setShiftData}
+        shiftInfo={props.shiftInfo}
       />
-      <ShiftWorkerInfo ref={infoRef} getWId={() => currentWorkerId} />
+      <ShiftWorkerInfo
+        ref={infoRef}
+        getWId={() => currentWorkerId}
+        setShiftData={props.setShiftData}
+        shiftInfo={props.shiftInfo}
+      />
     </>
   );
 };
