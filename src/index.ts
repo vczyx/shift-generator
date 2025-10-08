@@ -228,6 +228,51 @@ ipcMain.handle(
   }
 );
 
+ipcMain.handle(
+  "get-directoryinfo",
+  async (_event, paths: string): Promise<IpcResponse<DirectoryInfo>> => {
+    try {
+      let data: DirectoryInfo;
+      const getDirs = async (p: string): Promise<DirectoryInfo> => {
+        const entries = await fs.readdir(p);
+        const dirs = (
+          await Promise.all(
+            entries.map(async (f) => {
+              const stat = await fs.stat(path.join(p, f));
+              return stat.isDirectory() ? f : null;
+            })
+          )
+        ).filter((entry): entry is string => entry !== null);
+
+        const files = (
+          await Promise.all(
+            entries.map(async (f) => {
+              const stat = await fs.stat(path.join(p, f));
+              return stat.isFile() ? f : null;
+            })
+          )
+        ).filter((entry): entry is string => entry !== null);
+
+        return {
+          directories: Object.fromEntries(
+            await Promise.all(
+              dirs
+                .filter((f): f is string => f !== null)
+                .map(async (f) => [f, await getDirs(path.join(p, f))])
+            )
+          ),
+          files: files,
+        };
+      };
+
+      data = await getDirs(path.join(__dirname, paths));
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+);
+
 const openWindow = (
   view?: string,
   options?: BrowserWindowConstructorOptions

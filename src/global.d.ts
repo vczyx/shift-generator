@@ -1,3 +1,8 @@
+declare module "*.ico" {
+  const value: string;
+  export default value;
+}
+
 interface GetDataInfoResponse {
   brands: {
     [brand: string]: {
@@ -239,4 +244,9 @@ interface Shift {
 interface ShiftInformation {
   brandConfig: BrandConfig;
   shift: Shift;
+}
+
+interface DirectoryInfo {
+  directories: { [dir: string]: DirectoryInfo };
+  files: string[];
 }

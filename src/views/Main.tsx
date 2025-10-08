@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import FileExplorer from "../components/FileExplorer";
 
 const Main: React.FC = () => {
   const [brand, setBrand] = useState("KFC");
@@ -6,7 +7,7 @@ const Main: React.FC = () => {
   const [restaurant, setRestaurant] = useState("TestStation");
   const [shift, setShift] = useState("20250922");
 
-  window.electron.getDataInfo().then((x) => console.log(x));
+  // window.electron.getDataInfo().then((x) => console.log(x));
   return (
     <>
       <input value={brand} onChange={(e) => setBrand(e.target.value)}></input>
@@ -23,6 +24,7 @@ const Main: React.FC = () => {
       >
         Open Editor
       </button>
+      <FileExplorer defaultPath="data" onSelected={(x) => console.log(x)} />
     </>
   );
 };

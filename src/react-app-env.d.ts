@@ -22,5 +22,6 @@ interface Window {
       shift: string
     ) => Promise<IpcResponse<Shift>>;
     getBrandConfig: (brand: string) => Promise<IpcResponse<BrandConfig>>;
+    getDirectoryInfo: (path: string) => Promise<IpcResponse<DirectoryInfo>>;
   };
 }

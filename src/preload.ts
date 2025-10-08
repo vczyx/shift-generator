@@ -19,4 +19,6 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("get-shift", brand, area, restaurant, shift),
   getBrandConfig: (brand: string) =>
     ipcRenderer.invoke("get-brand-config", brand),
+  getDirectoryInfo: (path: string) =>
+    ipcRenderer.invoke("get-directoryinfo", path),
 });

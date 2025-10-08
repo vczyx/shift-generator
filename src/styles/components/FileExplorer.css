@@ -1,0 +1,18 @@
+.fileexp {
+  user-select: none;
+  overflow-y: scroll;
+}
+.fileexp-dir {
+  margin-left: 20px;
+}
+
+.fileexp-item-img {
+  margin-right: 5px;
+}
+
+.fileexp-item-content {
+  display: flex;
+
+  justify-items: center;
+  align-items: center;
+}
