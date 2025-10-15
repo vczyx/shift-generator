@@ -1,12 +1,13 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
-import { contextBridge, ipcRenderer } from "electron";
+import { MessageBoxOptions, contextBridge, ipcRenderer } from "electron";
 
 contextBridge.exposeInMainWorld("electron", {
-  readFile: (filePath: string) => ipcRenderer.invoke("read-file", filePath),
-  writeFile: (filePath: string, content: string) =>
-    ipcRenderer.invoke("write-file", { filePath, content }),
+  readFile: (filePath: string, currentDirPath: boolean) =>
+    ipcRenderer.invoke("read-file", filePath, currentDirPath),
+  writeFile: (filePath: string, content: string, currentDirPath: boolean) =>
+    ipcRenderer.invoke("write-file", filePath, content, currentDirPath),
   openFileDialog: () => ipcRenderer.invoke("open-file-dialog"),
   openEditor: (
     brand: string,
@@ -21,4 +22,6 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("get-brand-config", brand),
   getDirectoryInfo: (path: string) =>
     ipcRenderer.invoke("get-directoryinfo", path),
+  showMsgBox: (option: MessageBoxOptions) =>
+    ipcRenderer.invoke("show-msgbox", option),
 });

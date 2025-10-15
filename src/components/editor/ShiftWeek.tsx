@@ -15,6 +15,7 @@ interface ShiftWeekProps {
   contextMenu: RefObject<ContextMenuHandle>;
   shiftInfo: ShiftInformation;
   setShiftData: (data: Shift) => void;
+  save: () => void;
 }
 
 const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
@@ -46,8 +47,16 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
     items?: ContextMenuItemData[];
     onClick?: () => void;
   }[] = [
-    { display: "파일", items: [{ type: "button", caption: "asd" }] },
-    { display: "편집", items: [{ type: "button", caption: "asd" }] },
+    {
+      display: "파일",
+      items: [
+        { type: "button", caption: "새 파일" },
+        { type: "button", caption: "열기" },
+        { type: "button", caption: "저장", onClick: props.save },
+        { type: "button", caption: "다른 이름으로 저장" },
+      ],
+    },
+    { display: "", items: [{ type: "button", caption: "asd" }] },
     { display: "근무자 추가", onClick: openAddPanel },
     {
       display: "",

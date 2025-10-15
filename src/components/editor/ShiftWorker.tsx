@@ -44,7 +44,7 @@ const ShiftWorker: React.FC<ShiftWorkerProps> = ({
   const curWorker = ShiftF.getWorker(shiftInfo, workerId);
   const name = curWorker.name;
   const roleData = ShiftF.getRoleData(shiftInfo, curWorker);
-  const partTime = curDay.workers[workerId];
+  const partTime = curDay.workers[workerId] ?? { start: 0, end: 0 };
 
   // 색 설정
   const errorColor = "rgba(50,50,50,0.5)";

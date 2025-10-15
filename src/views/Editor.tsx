@@ -11,20 +11,27 @@ interface EditorProps {
 const Editor: React.FC<EditorProps> = (props) => {
   const params = useParams();
   const contextMenuRef = useRef<ContextMenuHandle | null>(null);
-  const [brand, setBrand] = useState<string>(params.brand);
-  const [area, setArea] = useState<string>(params.area);
-  const [restaurant, setRestaurant] = useState<string>(params.restaurant);
-  const [shift, setShift] = useState<string>(params.shift);
+
+  const [address, setAddress] = useState<{
+    brand: string;
+    area: string;
+    restaurant: string;
+    shift: string;
+  }>({
+    brand: params.brand,
+    area: params.area,
+    restaurant: params.restaurant,
+    shift: params.shift,
+  });
 
   const [brandConfig, setBrandConfig] = useState<BrandConfig>(null);
   const [shiftData, setShiftData] = useState<Shift>(null);
 
-  // const
-  console.log(params);
-  console.log(brand, area, restaurant, shift);
   useEffect(() => {
     (async () => {
-      const brandConfigRes = await window.electron.getBrandConfig(brand);
+      const brandConfigRes = await window.electron.getBrandConfig(
+        address.brand
+      );
       if (!brandConfigRes.success) {
         window.alert(
           "BRAND CONFIG를 불러오는 데에 실패했습니다. 자세한 내용은 Console을 확인하십시오."
@@ -35,10 +42,10 @@ const Editor: React.FC<EditorProps> = (props) => {
       setBrandConfig(brandConfigRes.data);
 
       const shiftRes = await window.electron.getShift(
-        brand,
-        area,
-        restaurant,
-        shift
+        address.brand,
+        address.area,
+        address.restaurant,
+        address.shift
       );
       if (!shiftRes.success) {
         window.alert(
@@ -50,7 +57,31 @@ const Editor: React.FC<EditorProps> = (props) => {
 
       setShiftData(shiftRes.data);
     })();
-  }, [brand, area, restaurant, shift]);
+  }, [address]);
+
+  const saveFile = async () => {
+    const res = await window.electron.writeFile(
+      `data/${address.brand}/${address.area}/${address.restaurant}/${address.shift}.json`,
+      JSON.stringify(shiftData.week, null, 2),
+      true
+    );
+
+    if (res.success) {
+      await window.electron.showMsgBox({
+        type: "info",
+        title: "저장 완료",
+        message: "성공적으로 저장되었습니다.",
+        button: ["확인"],
+      });
+    } else {
+      await window.electron.showMsgBox({
+        type: "error",
+        title: "오류",
+        message: "저장을 완료하지 못했습니다. " + res.error,
+        button: ["확인"],
+      });
+    }
+  };
 
   return (
     <>
@@ -60,6 +91,7 @@ const Editor: React.FC<EditorProps> = (props) => {
             contextMenu={contextMenuRef}
             shiftInfo={{ brandConfig, shift: shiftData }}
             setShiftData={setShiftData}
+            save={saveFile}
           />
         )}
       </div>
