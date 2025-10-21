@@ -2,7 +2,7 @@ import ShiftWeek from "../components/editor/ShiftWeek";
 import "../styles/Editor.css";
 import ContextMenu, { ContextMenuHandle } from "../components/ContextMenu";
 import { RefObject, useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 
 interface EditorProps {
   // contextMenu?: RefObject<ContextMenuHandle>;
@@ -10,6 +10,7 @@ interface EditorProps {
 
 const Editor: React.FC<EditorProps> = (props) => {
   const params = useParams();
+  const query = new URLSearchParams(useLocation().search);
   const contextMenuRef = useRef<ContextMenuHandle | null>(null);
 
   const [address, setAddress] = useState<{
@@ -26,6 +27,31 @@ const Editor: React.FC<EditorProps> = (props) => {
 
   const [brandConfig, setBrandConfig] = useState<BrandConfig>(null);
   const [shiftData, setShiftData] = useState<Shift>(null);
+  const divRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = divRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const { width, height } = entry.target.getBoundingClientRect();
+        if (height > 0) {
+          window.electron?.setWindowSize(parseInt(query.get("winId")), {
+            width,
+            height,
+          });
+        }
+        console.log("offsetWidth:", el.offsetWidth);
+        console.log("scrollWidth:", el.scrollWidth);
+        console.log("boundingRect:", el.getBoundingClientRect());
+      }
+    });
+
+    observer.observe(el);
+    window.electron.openDevTool(parseInt(query.get("winId")));
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -85,7 +111,7 @@ const Editor: React.FC<EditorProps> = (props) => {
 
   return (
     <>
-      <div className="editorview">
+      <div className="editorview" ref={divRef}>
         {brandConfig && shiftData && (
           <ShiftWeek
             contextMenu={contextMenuRef}

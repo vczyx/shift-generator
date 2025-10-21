@@ -1,7 +1,12 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
-import { MessageBoxOptions, contextBridge, ipcRenderer } from "electron";
+import {
+  BrowserWindow,
+  MessageBoxOptions,
+  contextBridge,
+  ipcRenderer,
+} from "electron";
 
 contextBridge.exposeInMainWorld("electron", {
   readFile: (filePath: string, currentDirPath: boolean) =>
@@ -24,4 +29,7 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("get-directoryinfo", path),
   showMsgBox: (option: MessageBoxOptions) =>
     ipcRenderer.invoke("show-msgbox", option),
+  setWindowSize: (winId: number, args: { width: number; height: number }) =>
+    ipcRenderer.invoke("set-window-size", winId, args),
+  openDevTool: (winId: number) => ipcRenderer.invoke("open-dev-tool", winId),
 });

@@ -19,6 +19,15 @@ import util from "./utils/util";
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
+async function IpcAction<T>(action: () => Promise<T>): Promise<IpcResponse<T>> {
+  try {
+    const data = await action();
+    return { success: true, data };
+  } catch (error) {
+    return { success: false, error: error?.message ?? String(error) };
+  }
+}
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
   app.quit();
@@ -30,15 +39,12 @@ ipcMain.handle(
     _event,
     filePath: string,
     currentDirPath: boolean
-  ): Promise<IpcResponse<string>> => {
-    try {
+  ): Promise<IpcResponse<string>> =>
+    await IpcAction<string>(async () => {
       const p = currentDirPath ? path.join(__dirname, filePath) : filePath;
       const data = await fs.readFile(p, "utf-8");
-      return { success: true, data };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
+      return data;
+    })
 );
 
 ipcMain.handle(
@@ -48,15 +54,11 @@ ipcMain.handle(
     filePath: string,
     content: string,
     currentDirPath: boolean
-  ): Promise<IpcResponse<void>> => {
-    try {
+  ): Promise<IpcResponse<void>> =>
+    await IpcAction<void>(async () => {
       const p = currentDirPath ? path.join(__dirname, filePath) : filePath;
       await fs.writeFile(p, content, "utf-8");
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
+    })
 );
 
 ipcMain.handle("open-file-dialog", async () => {
@@ -83,24 +85,23 @@ ipcMain.handle(
     area: string,
     restaurant: string,
     shift: string
-  ) => {
-    openWindow(`/editor/${brand}/${area}/${restaurant}/${shift}`, {
-      height: 800,
-      width: 1500,
-      title: "Shift Editor",
-    });
-    // const mainWindow = new BrowserWindow({
-    //   height: 800,
-    //   width: 1500,
-    //   webPreferences: {
-    //     preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
-    //     contextIsolation: true,
-    //     nodeIntegration: false,
-    //   },
-    //   title: "Shift Editor",
-    // });
-    // mainWindow.loadURL(`http://localhost:3000/main_window/#/editor/${brand}/${area}/${restaurant}/${shift}`);
-  }
+  ): Promise<IpcResponse<number>> =>
+    await IpcAction(async () => {
+      return openWindow(`/editor/${brand}/${area}/${restaurant}/${shift}`, {
+        height: 755,
+        width: 1260,
+        title: "Shift Editor",
+      });
+    })
+);
+
+ipcMain.handle(
+  "open-dev-tool",
+  async (_event, winId: number): Promise<IpcResponse<void>> =>
+    await IpcAction(async () => {
+      const win = BrowserWindow.fromId(winId);
+      win.webContents.openDevTools({ mode: "detach" });
+    })
 );
 
 const getSubDirectories = async (paths: string) => {
@@ -123,9 +124,9 @@ const getFiles = async (paths: string) => {
 };
 ipcMain.handle(
   "get-data-info",
-  async (_event): Promise<IpcResponse<GetDataInfoResponse>> => {
-    let result: GetDataInfoResponse = { brands: null };
-    try {
+  async (_event): Promise<IpcResponse<GetDataInfoResponse>> =>
+    await IpcAction(async () => {
+      let result: GetDataInfoResponse = { brands: null };
       const dataDirPath = path.join(__dirname, "data");
       console.log(__dirname);
       // ./data 탐색 (디렉토리만) (Brands)
@@ -177,28 +178,21 @@ ipcMain.handle(
       );
 
       result.brands = Object.fromEntries(areas);
-      return { success: true, data: result };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
+      return result;
+    })
 );
 
 ipcMain.handle(
   "get-brand-config",
-  async (_event, brand: string): Promise<IpcResponse<BrandConfig>> => {
-    try {
-      const data = JSON.parse(
+  async (_event, brand: string): Promise<IpcResponse<BrandConfig>> =>
+    await IpcAction(async () =>
+      JSON.parse(
         await fs.readFile(
           path.join(__dirname, "data", brand, "brand.json"),
           "utf-8"
         )
-      );
-      return { success: true, data };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
+      )
+    )
 );
 
 ipcMain.handle(
@@ -209,49 +203,35 @@ ipcMain.handle(
     area: string,
     restaurant: string,
     shift: string
-  ): Promise<IpcResponse<Shift>> => {
-    try {
-      const data: Shift = {
-        workers: JSON.parse(
-          await fs.readFile(
-            path.join(
-              __dirname,
-              "data",
-              brand,
-              area,
-              restaurant,
-              "workers.json"
-            ),
-            "utf-8"
-          )
-        ),
-        week: JSON.parse(
-          await fs.readFile(
-            path.join(
-              __dirname,
-              "data",
-              brand,
-              area,
-              restaurant,
-              `${shift}.json`
-            ),
-            "utf-8"
-          )
-        ),
-        firstDate: util.parseYYYYMMDD(shift),
-      };
-      return { success: true, data };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
+  ): Promise<IpcResponse<Shift>> =>
+    await IpcAction(async () => ({
+      workers: JSON.parse(
+        await fs.readFile(
+          path.join(__dirname, "data", brand, area, restaurant, "workers.json"),
+          "utf-8"
+        )
+      ),
+      week: JSON.parse(
+        await fs.readFile(
+          path.join(
+            __dirname,
+            "data",
+            brand,
+            area,
+            restaurant,
+            `${shift}.json`
+          ),
+          "utf-8"
+        )
+      ),
+      firstDate: util.parseYYYYMMDD(shift),
+    }))
 );
 
 ipcMain.handle(
   "get-directoryinfo",
-  async (_event, paths: string): Promise<IpcResponse<DirectoryInfo>> => {
-    try {
-      let data: DirectoryInfo;
+  async (_event, paths: string): Promise<IpcResponse<DirectoryInfo>> =>
+    await IpcAction(async () => {
       const getDirs = async (p: string): Promise<DirectoryInfo> => {
         const entries = await fs.readdir(p);
         const dirs = (
@@ -284,12 +264,8 @@ ipcMain.handle(
         };
       };
 
-      data = await getDirs(path.join(__dirname, paths));
-      return { success: true, data };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
+      return await getDirs(path.join(__dirname, paths));
+    })
 );
 
 ipcMain.handle(
@@ -297,34 +273,61 @@ ipcMain.handle(
   async (
     _event,
     option: MessageBoxOptions
-  ): Promise<IpcResponse<MessageBoxReturnValue>> => {
-    try {
-      const data = await dialog.showMessageBox(option);
-      return { success: true, data };
-    } catch (error) {
-      return { success: false, error };
-    }
-  }
+  ): Promise<IpcResponse<MessageBoxReturnValue>> =>
+    await IpcAction(async () => {
+      return dialog.showMessageBox(option);
+    })
+);
+
+ipcMain.handle(
+  "set-window-size",
+  async (
+    _event,
+    winId: number,
+    args: { width: number; height: number }
+  ): Promise<IpcResponse<void>> =>
+    await IpcAction(async () => {
+      const win = BrowserWindow.fromId(winId);
+      const { width, height } = args;
+
+      const [frameWidth, frameHeight] = win.getSize();
+      const [contentWidth, contentHeight] = win.getContentSize();
+
+      const extraWidth = frameWidth - contentWidth;
+      const extraHeight = frameHeight - contentHeight;
+      // const bounds = win.getBounds();
+      // win.setBounds({
+      //   x: bounds.x,
+      //   y: bounds.y,
+      //   width: Math.ceil(width + extraWidth),
+      //   height: Math.ceil(height + extraHeight),
+      // });
+      win.setContentSize(width, height);
+    })
 );
 
 const openWindow = (
   view?: string,
   options?: BrowserWindowConstructorOptions
-): BrowserWindow => {
+): number => {
   const baseUrl = isDev
     ? "http://localhost:3000/main_window"
     : `file://${path.join(__dirname, "../renderer/main_window/index.html")}`;
 
   const window = new BrowserWindow({
     ...options,
+    resizable: true,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
-  window.loadURL(`${baseUrl}${view ? `#${view}` : ""}`);
-  return window;
+  const index = window.id;
+  const query = new URLSearchParams({ winId: `${index}` }).toString();
+  window.loadURL(`${baseUrl}${view ? `#${view}` : ""}?${query}`);
+  // window.webContents.openDevTools();
+  return index;
 };
 
 const createWindow = (): void => {

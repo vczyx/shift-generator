@@ -15,7 +15,7 @@ interface Window {
       area: string,
       restaurant: string,
       shift: string
-    ) => void;
+    ) => number;
     getDataInfo: () => Promise<IpcResponse<GetDataInfoResponse>>;
     getShift: (
       brand: string,
@@ -28,5 +28,10 @@ interface Window {
     showMsgBox: (
       option: MessageBoxOptions
     ) => Promise<IpcResponse<MessageBoxReturnValue>>;
+    setWindowSize: (
+      winId: number,
+      args: { width: number; height: number }
+    ) => Promise<IpcResponse<void>>;
+    openDevTool: (winId: number) => Promise<IpcResponse<void>>;
   };
 }
