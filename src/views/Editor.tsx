@@ -33,24 +33,18 @@ const Editor: React.FC<EditorProps> = (props) => {
     const el = divRef.current;
     if (!el) return;
 
-    const observer = new ResizeObserver((entries) => {
-      for (let entry of entries) {
-        const { width, height } = entry.target.getBoundingClientRect();
-        if (height > 0) {
-          window.electron?.setWindowSize(parseInt(query.get("winId")), {
-            width,
-            height,
-          });
-        }
-        console.log("offsetWidth:", el.offsetWidth);
-        console.log("scrollWidth:", el.scrollWidth);
-        console.log("boundingRect:", el.getBoundingClientRect());
-      }
-    });
+    // 렌더링 완료 후 크기 측정
+    const { width, height } = el.getBoundingClientRect();
 
-    observer.observe(el);
-    window.electron.openDevTool(parseInt(query.get("winId")));
-    return () => observer.disconnect();
+    if (width > 0 && height > 0) {
+      const winId = parseInt(
+        new URLSearchParams(location.search).get("winId") || "0"
+      );
+      window.electron?.setWindowSize(winId, {
+        width: Math.round(width),
+        height: Math.round(height),
+      });
+    }
   }, []);
 
   useEffect(() => {
@@ -91,7 +85,6 @@ const Editor: React.FC<EditorProps> = (props) => {
       JSON.stringify(shiftData.week, null, 2),
       true
     );
-
     if (res.success) {
       await window.electron.showMsgBox({
         type: "info",

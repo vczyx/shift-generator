@@ -91,6 +91,7 @@ ipcMain.handle(
         height: 755,
         width: 1260,
         title: "Shift Editor",
+        resizable: false,
       });
     })
 );
@@ -289,20 +290,10 @@ ipcMain.handle(
     await IpcAction(async () => {
       const win = BrowserWindow.fromId(winId);
       const { width, height } = args;
-
-      const [frameWidth, frameHeight] = win.getSize();
-      const [contentWidth, contentHeight] = win.getContentSize();
-
-      const extraWidth = frameWidth - contentWidth;
-      const extraHeight = frameHeight - contentHeight;
-      // const bounds = win.getBounds();
-      // win.setBounds({
-      //   x: bounds.x,
-      //   y: bounds.y,
-      //   width: Math.ceil(width + extraWidth),
-      //   height: Math.ceil(height + extraHeight),
-      // });
+      const resizable = win.resizable;
+      win.setResizable(true);
       win.setContentSize(width, height);
+      win.setResizable(resizable);
     })
 );
 
@@ -316,13 +307,14 @@ const openWindow = (
 
   const window = new BrowserWindow({
     ...options,
-    resizable: true,
+    useContentSize: true,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
+  window.setMenu(null);
   const index = window.id;
   const query = new URLSearchParams({ winId: `${index}` }).toString();
   window.loadURL(`${baseUrl}${view ? `#${view}` : ""}?${query}`);
