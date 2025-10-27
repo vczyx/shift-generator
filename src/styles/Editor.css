@@ -1,3 +1,9 @@
 .editorview {
   width: 1260px;
 }
+.editorview-title {
+  padding: 5px;
+  font-size: 18;
+  font-weight: bold;
+  background-color: #ddd;
+}

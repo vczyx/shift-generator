@@ -91,8 +91,8 @@ ipcMain.handle(
       const winId = openWindow(
         `/editor/${brand}/${area}/${restaurant}/${date}/${shift}`,
         {
-          height: 755,
-          width: 1260,
+          height: 800,
+          width: 1300,
           title: "Shift Editor",
           resizable: false,
         }
@@ -290,12 +290,16 @@ ipcMain.handle(
   ): Promise<IpcResponse<void>> =>
     await IpcAction(async () => {
       const win = BrowserWindow.fromId(winId);
+      dialog.showMessageBox(null, {
+        message: `${winId}, ${args.width}, ${args.height}`,
+      });
       if (!win) return;
       const { width, height } = args;
       const resizable = win.resizable;
       win.setResizable(true);
       win.setContentSize(width, height);
       win.setResizable(resizable);
+      dialog.showMessageBox(null, { message: `${height}` });
     })
 );
 
@@ -329,7 +333,7 @@ const openWindow = (
   });
   window.setMenu(null);
   const index = window.id;
-  const query = new URLSearchParams({ winId: `${index}` }).toString();
+  const query = new URLSearchParams({ winid: `${index}` }).toString();
   window.loadURL(`${baseUrl}${view ? `#${view}` : ""}?${query}`);
   // window.webContents.openDevTools();
   return index;

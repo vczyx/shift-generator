@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Address } from "../views/Editor";
 import "../styles/components/AddressSelector.css";
 
 interface AddressSelectorProps {
@@ -11,7 +10,7 @@ interface AddressSelectorProps {
 }
 
 const AddressSelector: React.FC<AddressSelectorProps> = (props) => {
-  const [address, setAddress] = useState(props.defaultAddress)
+  const [address, setAddress] = useState(props.defaultAddress);
   return (
     <>
       <div

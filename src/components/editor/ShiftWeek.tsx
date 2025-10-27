@@ -23,6 +23,7 @@ interface ShiftWeekProps {
     newFile: () => Promise<void>;
     openDevTool: () => Promise<void>;
   };
+  onRendered: () => void;
 }
 
 const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
@@ -84,6 +85,10 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
   ];
 
   const infoRef = useRef<any>(null);
+
+  useEffect(() => {
+    props.onRendered();
+  }, []);
 
   /**
    * Handle

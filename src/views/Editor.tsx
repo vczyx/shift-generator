@@ -1,7 +1,7 @@
 import ShiftWeek from "../components/editor/ShiftWeek";
 import "../styles/Editor.css";
 import ContextMenu, { ContextMenuHandle } from "../components/ContextMenu";
-import { RefObject, useEffect, useRef, useState } from "react";
+import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { ipcRenderer } from "electron";
 import ShiftSelector from "../components/ShiftSelector";
@@ -15,7 +15,7 @@ const Editor: React.FC<EditorProps> = (props) => {
   const params = useParams();
   const query = new URLSearchParams(useLocation().search);
   const contextMenuRef = useRef<ContextMenuHandle | null>(null);
-  const winId = parseInt(query.get("winId"));
+  const getWinId = () => parseInt(query.get("winid"));
 
   const [address, setAddress] = useState<Address>({
     brand: params.brand,
@@ -55,22 +55,25 @@ const Editor: React.FC<EditorProps> = (props) => {
     shiftData?.firstDate ?? util.parseYYYYMMDD(address.date);
   const divRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const el = divRef.current;
-    if (!el) return;
+  const setWinSize = useCallback(() => {
+    requestAnimationFrame(() => {
+      const el = divRef.current;
+      if (!el) return;
 
-    // 렌더링 완료 후 크기 측정
-    const { width, height } = el.getBoundingClientRect();
+      // 렌더링 완료 후 크기 측정
+      const { width, height } = el.getBoundingClientRect();
 
-    if (width > 0 && height > 0) {
-      const winId = parseInt(
-        new URLSearchParams(location.search).get("winId") || "0"
-      );
-      window.electron?.setWindowSize(winId, {
-        width: Math.round(width),
-        height: Math.round(height),
-      });
-    }
+      if (width > 0 && height > 0) {
+        const winId = parseInt(
+          new URLSearchParams(location.search).get("winId") || "0"
+        );
+        alert(getWinId());
+        window.electron?.setWindowSize(getWinId(), {
+          width: Math.round(width),
+          height: Math.round(height),
+        });
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -125,7 +128,7 @@ const Editor: React.FC<EditorProps> = (props) => {
         message: "변경 사항을 저장하시겠습니까?",
         buttons: ["취소", "저장 안함", "저장"],
       },
-      winId
+      getWinId()
     );
 
     if (!res.success) {
@@ -145,7 +148,7 @@ const Editor: React.FC<EditorProps> = (props) => {
 
   const menuActions = {
     openDevTool: async () => {
-      window.electron.openDevTool(winId);
+      window.electron.openDevTool(getWinId());
     },
     save: async (showMsg: boolean = true) => {
       const res = await window.electron.writeFile(
@@ -162,7 +165,7 @@ const Editor: React.FC<EditorProps> = (props) => {
             message: "성공적으로 저장되었습니다.",
             buttons: ["확인"],
           },
-          winId
+          getWinId()
         );
       } else {
         await window.electron.showMsgBox(
@@ -172,7 +175,7 @@ const Editor: React.FC<EditorProps> = (props) => {
             message: "저장을 완료하지 못했습니다. " + res.error,
             buttons: ["확인"],
           },
-          winId
+          getWinId()
         );
       }
     },
@@ -190,7 +193,7 @@ const Editor: React.FC<EditorProps> = (props) => {
 
       if (isSave === null) return;
       if (isSave === true) await menuActions.save(false);
-      const res = await window.electron.closeWindow(winId);
+      const res = await window.electron.closeWindow(getWinId());
       if (!res.success) {
         await window.electron.showMsgBox(
           {
@@ -199,7 +202,7 @@ const Editor: React.FC<EditorProps> = (props) => {
             message: "종료 수행을 완료하지 못했습니다." + res.error,
             buttons: ["확인"],
           },
-          winId
+          getWinId()
         );
       }
     },
@@ -208,8 +211,13 @@ const Editor: React.FC<EditorProps> = (props) => {
   return (
     <>
       <div className="editorview" ref={divRef}>
+        <div className="editorview-title">
+          {address &&
+            `[ ${address.brand} ] ${address.area} - ${address.restaurant} (${address.date}/${address.shift})`}
+        </div>
         {brandConfig && shiftData && (
           <ShiftWeek
+            onRendered={setWinSize}
             contextMenu={contextMenuRef}
             shiftInfo={{ brandConfig, shift: shiftData }}
             setShiftData={setShiftData}
@@ -217,7 +225,6 @@ const Editor: React.FC<EditorProps> = (props) => {
           />
         )}
       </div>
-      <ContextMenu enabled ref={contextMenuRef} />
       {shiftData && (
         <ShiftSelector
           visible={shiftSelector}
@@ -231,6 +238,7 @@ const Editor: React.FC<EditorProps> = (props) => {
           display={display[mode]}
         />
       )}
+      <ContextMenu enabled ref={contextMenuRef} />
     </>
   );
 };
