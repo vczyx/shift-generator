@@ -248,3 +248,11 @@ interface DirectoryInfo {
   directories: { [dir: string]: DirectoryInfo };
   files: string[];
 }
+
+interface Address {
+  brand: string;
+  area: string;
+  restaurant: string;
+  date: string;
+  shift: string;
+}

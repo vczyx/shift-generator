@@ -10,13 +10,6 @@ import util from "../utils/util";
 interface EditorProps {
   // contextMenu?: RefObject<ContextMenuHandle>;
 }
-export interface Address {
-  brand: string;
-  area: string;
-  restaurant: string;
-  date: string;
-  shift: string;
-}
 
 const Editor: React.FC<EditorProps> = (props) => {
   const params = useParams();
@@ -35,10 +28,28 @@ const Editor: React.FC<EditorProps> = (props) => {
   const [brandConfig, setBrandConfig] = useState<BrandConfig>(null);
   const [shiftData, setShiftData] = useState<Shift>(null);
   const [shiftSelector, setShiftSelector] = useState(false);
+  const [mode, setMode] = useState<"saveas" | "open">("saveas");
 
   const [dirInfo, setDirInfo] = useState<{
     [date: string]: string[];
   }>();
+
+  const display = {
+    saveas: {
+      title: "다른 이름으로 저장",
+      buttons: {
+        yes: "저장",
+        no: "취소",
+      },
+    },
+    open: {
+      title: "열기",
+      buttons: {
+        yes: "열기",
+        no: "취소",
+      },
+    },
+  };
 
   const getDate = () =>
     shiftData?.firstDate ?? util.parseYYYYMMDD(address.date);
@@ -166,9 +177,13 @@ const Editor: React.FC<EditorProps> = (props) => {
       }
     },
     saveAs: async () => {
+      setMode("saveas");
       setShiftSelector(true);
     },
-    open: async () => {},
+    open: async () => {
+      setMode("open");
+      setShiftSelector(true);
+    },
     newFile: async () => {},
     exit: async () => {
       const isSave = await askSave();
@@ -206,12 +221,14 @@ const Editor: React.FC<EditorProps> = (props) => {
       {shiftData && (
         <ShiftSelector
           visible={shiftSelector}
-          defaultDate={getDate()}
-          defaultShift={address.shift}
+          setVisible={setShiftSelector}
+          defaultAddress={address}
           onSelected={(d) => {
-            window.alert(d);
+            window.alert(`${d.date}/${d.shift}`);
           }}
           dirInfos={dirInfo}
+          options={{ newFile: mode === "saveas" }}
+          display={display[mode]}
         />
       )}
     </>

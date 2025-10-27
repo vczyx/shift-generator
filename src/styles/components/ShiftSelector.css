@@ -36,5 +36,16 @@
 
   border: 1px solid black;
 }
-.shiftselector-item {
+.shiftselector-path > input {
+  outline: none;
+  border: none;
+  width: 100%;
 }
+.shiftselector-errorlabel {
+  overflow: hidden;
+  text-align: left;
+  font-size: 10;
+  color: brown;
+}
+/* .shiftselector-item {
+} */

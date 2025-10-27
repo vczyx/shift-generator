@@ -1,20 +1,30 @@
-import React, { useEffect, useState } from "react";
-import { Address } from "../views/Editor";
+import React, { useEffect, useRef, useState } from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import DatePicker from "react-datepicker";
-import { addDays, format } from "date-fns";
+import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import util, { range } from "../utils/util";
+import util from "../utils/util";
 import "../styles/components/ShiftSelector.css";
+import AddressF from "../data/Address";
 
 interface ShiftSelectorProps {
   visible: boolean;
-  onSelected: (date: Date) => void;
-  defaultDate: Date;
-  defaultShift: string;
+  setVisible: (value: boolean) => void;
+  onSelected: (address: Address) => void;
+  defaultAddress: Address;
   dirInfos: {
     [date: string]: string[];
   };
+
+  display?: {
+    title?: string;
+    descriptions?: string;
+    buttons?: {
+      no: string;
+      yes: string;
+    };
+  };
+  options?: { newFile?: boolean };
 }
 
 const ShiftSelector: React.FC<ShiftSelectorProps> = (props) => {
@@ -22,13 +32,10 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = (props) => {
     null,
     null,
   ]);
-  const [path, setPath] = useState(
-    `${format(props.defaultDate, "yyyyMMdd")}/${props.defaultShift}`
-  );
-
-  useEffect(() => {
-    handleChange(props.defaultDate);
-  }, [props.defaultDate]);
+  const [curAddress, setCurAddress] = useState(props.defaultAddress);
+  const [path, setPath] = useState(AddressF.toShiftPath(props.defaultAddress));
+  const [error, setError] = useState("");
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   // 선택된 날짜 기준으로 월요일~일요일 범위 계산
   const getWeekRange = (date: Date): [Date, Date] => {
@@ -45,13 +52,32 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = (props) => {
     if (date) {
       const [start, end] = getWeekRange(date);
       setWeekRange([start, end]);
-      setPath(
-        (prev) =>
-          `${format(start, "yyyyMMdd")}/${prev.split("/")[1] ?? "새 시프트 파일"}`
-      );
+      setCurAddress((prev) => {
+        const newV = { ...prev, date: format(start, "yyyyMMdd") };
+        setPath(AddressF.toShiftPath(newV));
+        return newV;
+      });
+      // setPath(
+      //   (prev) =>
+      //     `${format(start, "yyyyMMdd")}/${prev.split("/")[1] ?? "새 시프트 파일"}`
+      // );
     } else {
       setWeekRange([null, null]);
     }
+  };
+
+  useEffect(() => {
+    if (!props.visible) return;
+    setPath(AddressF.toShiftPath(props.defaultAddress));
+    setCurAddress(props.defaultAddress);
+    handleChange(AddressF.getDate(props.defaultAddress));
+    setError("");
+  }, [props.visible]);
+
+  const handleSelect = () => {
+    if (error !== "") return;
+    props.setVisible(false);
+    props.onSelected(curAddress);
   };
 
   return (
@@ -64,8 +90,11 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = (props) => {
         }}
       >
         <div className="overay-panel shiftselector">
-          <h2>다른 이름으로 저장</h2>
-          <p>다른 이름으로 저장 할 날짜와 이름을 입력하세요</p>
+          <h2>{props?.display?.title ?? "시프트 파일을 선택하세요."}</h2>
+          <p>
+            {props?.display?.descriptions ??
+              "날짜에 대한 시프트 파일을 선택하세요."}
+          </p>
           {/* <div>
             <div className="button">추가</div>
           </div> */}
@@ -89,9 +118,10 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = (props) => {
                 {format(weekRange[0], "yyyyMMdd")}
               </p>
               <ul className="shiftselector-itemcontainer">
-                {path.split("/")[0] === format(weekRange[0], "yyyyMMdd") &&
+                {(props?.options?.newFile ?? true) &&
+                  curAddress.date === format(weekRange[0], "yyyyMMdd") &&
                   !props.dirInfos[format(weekRange[0], "yyyyMMdd")]?.includes(
-                    path.split("/")[1] + ".json"
+                    curAddress.shift + ".json"
                   ) && (
                     <li
                       className="shiftselector-item button"
@@ -112,18 +142,24 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = (props) => {
                         key={i}
                         style={{
                           backgroundColor:
-                            path.split("/")[1] === shift.split(".")[0]
+                            curAddress.shift === shift.split(".")[0]
                               ? "#11dd11"
                               : "white",
                         }}
                         onClick={() =>
-                          setPath(
-                            `${format(weekRange[0], "yyyyMMdd")}/${shift.split(".")[0]}`
-                          )
+                          setCurAddress((prev) => {
+                            const newV = {
+                              ...prev,
+                              shift: shift.split(".")[0],
+                            };
+                            setPath(AddressF.toShiftPath(newV));
+                            return newV;
+                          })
                         }
                       >
                         {shift.split(".")[0]}
-                        {props.defaultShift === shift && (
+                        {props?.defaultAddress.shift ===
+                          shift.split(".")[0] && (
                           <>
                             <br />
                             <p style={{ fontSize: 12 }}>현재 파일</p>
@@ -135,20 +171,58 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = (props) => {
               </ul>
             </div>
           </div>
-          <input
+          <div
             className="shiftselector-path"
-            type="text"
-            value={path}
-            onChange={(e) => setPath(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "enter") {
-                handleChange(util.parseYYYYMMDD(path.split("/")[0]));
+            onFocus={() => inputRef?.current?.focus()}
+            tabIndex={0}
+          >
+            <input
+              type="text"
+              ref={inputRef}
+              value={path}
+              onChange={(e) =>
+                setCurAddress((prev) => {
+                  const path = e.target.value;
+                  const adr = AddressF.fromShiftPath(path, prev);
+                  setPath(path);
+                  if (adr?.date) handleChange(AddressF.getDate(adr));
+                  if (!adr?.shift) adr.shift = "";
+                  if (
+                    !(props?.options?.newFile ?? true) &&
+                    !props.dirInfos[adr.date]?.includes(adr.shift + ".json")
+                  )
+                    setError("파일이 존재하지 않습니다.");
+                  else setError("");
+                  return adr ?? prev;
+                })
               }
-            }}
-          />
+              onKeyDown={(e) => {
+                if (e.key === "enter") {
+                  handleChange(util.parseYYYYMMDD(path.split("/")[0]));
+                }
+              }}
+            />
+            <br />
+            <p
+              className="shiftselector-errorlabel"
+              style={{ height: error === "" ? "0px" : "16px" }}
+            >
+              {error}
+            </p>
+          </div>
+
           <div className="shiftselector-buttons">
-            <div className="button">취소</div>
-            <div className="button">저장</div>
+            <div
+              className="button"
+              onClick={() => {
+                props.setVisible(false);
+              }}
+            >
+              {props?.display?.buttons?.no ?? "취소"}
+            </div>
+            <div className="button" onClick={handleSelect}>
+              {props?.display?.buttons?.yes ?? "선택"}
+            </div>
           </div>
         </div>
       </div>
