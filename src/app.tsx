@@ -25,7 +25,7 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Main />} />
           <Route
-            path="/editor/:brand/:area/:restaurant/:shift"
+            path="/editor/:brand/:area/:restaurant/:date/:shift"
             element={<Editor />}
           />
           <Route path="*" element={<NotFound />} />

@@ -4,12 +4,10 @@ declare module "*.ico" {
 }
 
 interface GetDataInfoResponse {
-  brands: {
-    [brand: string]: {
-      areas: {
-        [area: string]: {
-          restaurants: string[];
-        };
+  [brand: string]: {
+    [area: string]: {
+      [restaurant: string]: {
+        [date: string]: string[];
       };
     };
   };

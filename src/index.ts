@@ -84,15 +84,27 @@ ipcMain.handle(
     brand: string,
     area: string,
     restaurant: string,
+    date: string,
     shift: string
   ): Promise<IpcResponse<number>> =>
     await IpcAction(async () => {
-      return openWindow(`/editor/${brand}/${area}/${restaurant}/${shift}`, {
-        height: 755,
-        width: 1260,
-        title: "Shift Editor",
-        resizable: false,
+      const winId = openWindow(
+        `/editor/${brand}/${area}/${restaurant}/${date}/${shift}`,
+        {
+          height: 755,
+          width: 1260,
+          title: "Shift Editor",
+          resizable: false,
+        }
+      );
+      const win = BrowserWindow.fromId(winId);
+
+      win.on("close", (e) => {
+        e.preventDefault();
+        win.webContents.send("ask-save");
       });
+
+      return winId;
     })
 );
 
@@ -127,59 +139,41 @@ ipcMain.handle(
   "get-data-info",
   async (_event): Promise<IpcResponse<GetDataInfoResponse>> =>
     await IpcAction(async () => {
-      let result: GetDataInfoResponse = { brands: null };
       const dataDirPath = path.join(__dirname, "data");
-      console.log(__dirname);
-      // ./data 탐색 (디렉토리만) (Brands)
-      const dataDir = await getSubDirectories(path.join(dataDirPath));
+      const brandDirs = await getSubDirectories(dataDirPath);
 
-      // ./data/.../ 탐색 (Areas)
-      const areas = await Promise.all(
-        dataDir
-          .filter(async (brand) =>
-            (await fs.stat(path.join(dataDirPath, brand))).isDirectory()
-          )
-          .map(async (brand) => [
-            brand,
-            {
-              // config:
-              //   JSON.parse(
-              //     await fs.readFile(
-              //       path.join(dataDirPath, brand, "brand.json"),
-              //       "utf-8"
-              //     )
-              //   ) ?? {},
-              areas: Object.fromEntries(
-                await Promise.all(
-                  (await getSubDirectories(path.join(dataDirPath, brand))).map(
-                    async (area) => [
-                      area,
-                      Object.fromEntries(
-                        await Promise.all(
-                          (
-                            await getSubDirectories(
-                              path.join(dataDirPath, brand, area)
-                            )
-                          ).map(async (restaurant) => [
-                            restaurant,
-                            (
-                              await getFiles(
-                                path.join(dataDirPath, brand, area, restaurant)
-                              )
-                            ).filter((x) => x !== "workers.json"),
-                          ])
-                        )
-                      ),
-                    ]
-                  )
-                )
-              ),
-            },
-          ])
+      const brandEntries = await Promise.all(
+        brandDirs.map(async (brand) => {
+          const brandPath = path.join(dataDirPath, brand);
+          if (!(await fs.stat(brandPath)).isDirectory()) return null;
+
+          const areaDirs = await getSubDirectories(brandPath);
+          const areaEntries = await Promise.all(
+            areaDirs.map(async (area) => {
+              const areaPath = path.join(brandPath, area);
+              const restaurantDirs = await getSubDirectories(areaPath);
+              const restaurantEntries = await Promise.all(
+                restaurantDirs.map(async (restaurant) => {
+                  const restaurantPath = path.join(areaPath, restaurant);
+                  const dateDirs = await getSubDirectories(restaurantPath);
+                  const dateEntries = await Promise.all(
+                    dateDirs.map(async (date) => {
+                      const datePath = path.join(restaurantPath, date);
+                      const files = await getFiles(datePath);
+                      return [date, files];
+                    })
+                  );
+                  return [restaurant, Object.fromEntries(dateEntries)];
+                })
+              );
+              return [area, Object.fromEntries(restaurantEntries)];
+            })
+          );
+          return [brand, Object.fromEntries(areaEntries)];
+        })
       );
 
-      result.brands = Object.fromEntries(areas);
-      return result;
+      return Object.fromEntries(brandEntries.filter(Boolean));
     })
 );
 
@@ -203,6 +197,7 @@ ipcMain.handle(
     brand: string,
     area: string,
     restaurant: string,
+    date: string,
     shift: string
   ): Promise<IpcResponse<Shift>> =>
     await IpcAction(async () => ({
@@ -220,12 +215,13 @@ ipcMain.handle(
             brand,
             area,
             restaurant,
+            date,
             `${shift}.json`
           ),
           "utf-8"
         )
       ),
-      firstDate: util.parseYYYYMMDD(shift),
+      firstDate: util.parseYYYYMMDD(date),
     }))
 );
 
@@ -273,10 +269,15 @@ ipcMain.handle(
   "show-msgbox",
   async (
     _event,
-    option: MessageBoxOptions
+    option: MessageBoxOptions,
+    winId: number
   ): Promise<IpcResponse<MessageBoxReturnValue>> =>
     await IpcAction(async () => {
-      return dialog.showMessageBox(option);
+      if (winId === -1) return dialog.showMessageBox({ ...option });
+      else
+        return dialog.showMessageBox(BrowserWindow.fromId(winId), {
+          ...option,
+        });
     })
 );
 
@@ -289,11 +290,23 @@ ipcMain.handle(
   ): Promise<IpcResponse<void>> =>
     await IpcAction(async () => {
       const win = BrowserWindow.fromId(winId);
+      if (!win) return;
       const { width, height } = args;
       const resizable = win.resizable;
       win.setResizable(true);
       win.setContentSize(width, height);
       win.setResizable(resizable);
+    })
+);
+
+ipcMain.handle(
+  "close-window",
+  async (_event, winId: number): Promise<IpcResponse<void>> =>
+    await IpcAction(async () => {
+      const win = BrowserWindow.fromId(winId);
+      if (!win) return;
+
+      win.destroy();
     })
 );
 
@@ -361,17 +374,16 @@ const onReady = async (): Promise<void> => {
   const area = path.join(brand, "TestArea");
   await fs.mkdir(area);
 
-  await fs.mkdir(path.join(area, "TestStation"));
+  const rest = path.join(area, "TestStation");
+  await fs.mkdir(rest);
   await fs.writeFile(
-    path.join(area, "TestStation", "workers.json"),
+    path.join(rest, "workers.json"),
     JSON.stringify(TestShiftData.workers, null, 2)
   );
+  const date = path.join(rest, format(TestShiftData.firstDate, "yyyyMMdd"));
+  await fs.mkdir(date);
   await fs.writeFile(
-    path.join(
-      area,
-      "TestStation",
-      `${format(TestShiftData.firstDate, "yyyyMMdd")}.json`
-    ),
+    path.join(date, `test1.json`),
     JSON.stringify(TestShiftData.week, null, 2)
   );
 };

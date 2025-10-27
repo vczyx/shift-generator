@@ -46,7 +46,7 @@ const AddWorkerPanel = forwardRef<AddWorkerPanelHandle, AddWorkerPanelProps>(
 
     return (
       <div
-        className="editor-addworker-overlay"
+        className="overlay"
         style={{
           opacity: visible ? 1 : 0,
           pointerEvents: visible ? "auto" : "none",
@@ -54,7 +54,7 @@ const AddWorkerPanel = forwardRef<AddWorkerPanelHandle, AddWorkerPanelProps>(
         onClick={onExit}
       >
         <div
-          className="editor-addworker-panel"
+          className="overay-panel editor-addworker"
           onClick={(e) => e.stopPropagation()}
         >
           <h2>근무자 추가</h2>

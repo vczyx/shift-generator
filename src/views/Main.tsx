@@ -5,7 +5,8 @@ const Main: React.FC = () => {
   const [brand, setBrand] = useState("KFC");
   const [area, setArea] = useState("TestArea");
   const [restaurant, setRestaurant] = useState("TestStation");
-  const [shift, setShift] = useState("20250922");
+  const [date, setDate] = useState("20250922");
+  const [shift, setShift] = useState("test1");
 
   // window.electron.getDataInfo().then((x) => console.log(x));
   return (
@@ -16,10 +17,11 @@ const Main: React.FC = () => {
         value={restaurant}
         onChange={(e) => setRestaurant(e.target.value)}
       ></input>
+      <input value={date} onChange={(e) => setDate(e.target.value)}></input>
       <input value={shift} onChange={(e) => setShift(e.target.value)}></input>
       <button
         onClick={() =>
-          window.electron.openEditor(brand, area, restaurant, shift)
+          window.electron.openEditor(brand, area, restaurant,date, shift)
         }
       >
         Open Editor

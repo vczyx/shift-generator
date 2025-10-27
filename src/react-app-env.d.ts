@@ -14,6 +14,7 @@ interface Window {
       brand: string,
       area: string,
       restaurant: string,
+      date: string,
       shift: string
     ) => number;
     getDataInfo: () => Promise<IpcResponse<GetDataInfoResponse>>;
@@ -21,17 +22,21 @@ interface Window {
       brand: string,
       area: string,
       restaurant: string,
+      date: string,
       shift: string
     ) => Promise<IpcResponse<Shift>>;
     getBrandConfig: (brand: string) => Promise<IpcResponse<BrandConfig>>;
     getDirectoryInfo: (path: string) => Promise<IpcResponse<DirectoryInfo>>;
     showMsgBox: (
-      option: MessageBoxOptions
+      option: MessageBoxOptions,
+      winId: number
     ) => Promise<IpcResponse<MessageBoxReturnValue>>;
     setWindowSize: (
       winId: number,
       args: { width: number; height: number }
     ) => Promise<IpcResponse<void>>;
     openDevTool: (winId: number) => Promise<IpcResponse<void>>;
+    closeWindow: (winId: number) => Promise<IpcResponse<void>>;
+    onAskSave: (callback: () => void) => void;
   };
 }

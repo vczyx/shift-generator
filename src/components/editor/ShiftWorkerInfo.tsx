@@ -33,19 +33,24 @@ const ShiftWorkerInfo = forwardRef<unknown, ShiftWorkerInfoProps>(
     // State 설정
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [show, setShow] = useState(false);
+    const mouseCheck = useRef<boolean>(false);
 
     // forwardRef Handlers
     const handlers = {
       handleMouseEnter: (e: React.MouseEvent<HTMLDivElement>) => {
         timerRef.current = setTimeout(() => {
+          mouseCheck.current = true;
+          handlers.handleMouseMove(e.nativeEvent);
           setShow(true);
         }, 500);
       },
       handleMouseLeave: (e: React.MouseEvent<HTMLDivElement>) => {
         clearTimeout(timerRef.current);
         setShow(false);
+        mouseCheck.current = false;
       },
       handleMouseMove: (e: MouseEvent) => {
+        if (!mouseCheck.current) return;
         // const tooltipWidth = 200; // 예상 툴팁 너비
         // const tooltipHeight = 200; // 예상 툴팁 높이
         const padding = 10;

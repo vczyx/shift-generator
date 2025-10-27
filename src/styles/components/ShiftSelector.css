@@ -1,0 +1,40 @@
+.shiftselector {
+  display: flex;
+  flex-direction: column;
+}
+
+.shiftselector-right {
+  margin-left: 10px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.shiftselector-wrapper {
+  display: flex;
+  flex-direction: row;
+  margin: 10px 0px;
+}
+
+.shiftselector-buttons {
+  width: 100%;
+  display: flex;
+  justify-content: right;
+  align-items: right;
+}
+
+.shiftselector-itemcontainer {
+  border: 1px solid black;
+  padding: 2px;
+  flex: 1;
+  overflow-y: scroll;
+}
+.shiftselector-path {
+  outline: none;
+  padding: 10px;
+  width: 100%;
+
+  border: 1px solid black;
+}
+.shiftselector-item {
+}

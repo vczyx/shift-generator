@@ -15,7 +15,14 @@ interface ShiftWeekProps {
   contextMenu: RefObject<ContextMenuHandle>;
   shiftInfo: ShiftInformation;
   setShiftData: (data: Shift) => void;
-  save: () => void;
+  menuAction: {
+    save: () => Promise<void>;
+    saveAs: () => Promise<void>;
+    open: () => Promise<void>;
+    exit: () => Promise<void>;
+    newFile: () => Promise<void>;
+    openDevTool: () => Promise<void>;
+  };
 }
 
 const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
@@ -50,14 +57,24 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
     {
       display: "파일",
       items: [
-        { type: "button", caption: "새 파일" },
-        { type: "button", caption: "열기" },
-        { type: "button", caption: "저장", onClick: props.save },
-        { type: "button", caption: "다른 이름으로 저장" },
+        {
+          type: "button",
+          caption: "새 파일",
+          onClick: props.menuAction.newFile,
+        },
+        { type: "button", caption: "열기", onClick: props.menuAction.open },
+        { type: "button", caption: "저장", onClick: props.menuAction.save },
+        {
+          type: "button",
+          caption: "다른 이름으로 저장",
+          onClick: props.menuAction.saveAs,
+        },
+        { type: "button", caption: "종료", onClick: props.menuAction.exit },
       ],
     },
-    { display: "", items: [{ type: "button", caption: "asd" }] },
+    { display: "편집", items: [{ type: "button", caption: "asd" }] },
     { display: "근무자 추가", onClick: openAddPanel },
+    { display: "Open DevTools", onClick: props.menuAction.openDevTool },
     {
       display: "",
       onClick: () => {
