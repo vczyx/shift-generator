@@ -110,9 +110,8 @@ const Editor: React.FC<EditorProps> = (props) => {
       if (di.success) {
         const data = di.data[address.brand][address.area][address.restaurant];
         setDirInfo(data);
-        console.log(di);
       }
-
+      console.log(address, shiftRes.data);
       setShiftData(shiftRes.data);
     })();
   }, [address]);
@@ -158,6 +157,10 @@ const Editor: React.FC<EditorProps> = (props) => {
 
   const save = useCallback(
     async (adr: Address, data: Shift, showMsg?: boolean) => {
+      if (adr.shift === "undefined") {
+        menuActions.saveAs();
+        return;
+      }
       const res = await window.electron.writeFile(
         `data/${AddressF.toPath(adr)}.json`,
         JSON.stringify(data.week, null, 2),
@@ -190,13 +193,13 @@ const Editor: React.FC<EditorProps> = (props) => {
   );
 
   const saveAs = useCallback(
-    async (newAdr: Address) => {
+    async (newAdr: Address, data: Shift) => {
       if (!AddressF.equals(address, newAdr)) {
         const msgRes = await window.electron.showMsgBox(
           {
             type: "question",
             title: "다른 이름으로 저장",
-            message: dirInfo[newAdr.date].includes(newAdr.shift + ".json")
+            message: dirInfo[newAdr?.date]?.includes(newAdr?.shift + ".json")
               ? "해당 위치에 이미 파일이 존재합니다. 덮어씌우시겠습니까?"
               : "해당 위치에 저장하시겠습니까?",
             buttons: ["아니요", "예"],
@@ -208,14 +211,13 @@ const Editor: React.FC<EditorProps> = (props) => {
         setAddress(newAdr);
       }
       setShiftSelector(false);
-      save(newAdr, shiftData, true);
+      save(newAdr, data, true);
     },
-    [shiftData, address]
+    [address]
   );
 
   const open = useCallback(
     async (newAdr: Address) => {
-      console.log(shiftData);
       exit(shiftData, async () => {
         await window.electron.openEditor(newAdr);
       });
@@ -261,7 +263,9 @@ const Editor: React.FC<EditorProps> = (props) => {
         setMode("open");
         setShiftSelector(true);
       },
-      newFile: async () => {},
+      newFile: async () => {
+        await open({ ...address, shift: undefined });
+      },
       exit: async () => {
         await exit(shiftData);
       },
@@ -294,7 +298,7 @@ const Editor: React.FC<EditorProps> = (props) => {
           onSelected={(newAdr) => {
             switch (mode) {
               case "saveas": {
-                saveAs(newAdr);
+                saveAs(newAdr, shiftData);
                 break;
               }
               case "open": {
