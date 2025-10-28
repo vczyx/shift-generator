@@ -213,7 +213,7 @@ const Editor: React.FC<EditorProps> = (props) => {
       setShiftSelector(false);
       save(newAdr, data, true);
     },
-    [address]
+    [address, dirInfo]
   );
 
   const open = useCallback(

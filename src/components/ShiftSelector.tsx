@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import DatePicker from "react-datepicker";
 import { format } from "date-fns";
@@ -48,23 +48,26 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = (props) => {
     return [monday, sunday];
   };
 
-  const handleChange = (date: Date | null, modifyPath?: boolean) => {
-    if (date) {
-      const [start, end] = getWeekRange(date);
-      setWeekRange([start, end]);
-      setCurAddress((prev) => {
-        const newV = { ...prev, date: format(start, "yyyyMMdd") };
-        if (modifyPath ?? true) setPath(AddressF.toShiftPath(newV));
-        return newV;
-      });
-      // setPath(
-      //   (prev) =>
-      //     `${format(start, "yyyyMMdd")}/${prev.split("/")[1] ?? "새 시프트 파일"}`
-      // );
-    } else {
-      setWeekRange([null, null]);
-    }
-  };
+  const handleChange = useCallback(
+    (date: Date | null, modifyPath?: boolean) => {
+      if (date) {
+        const [start, end] = getWeekRange(date);
+        setWeekRange([start, end]);
+        setCurAddress((prev) => {
+          const newV = { ...prev, date: format(start, "yyyyMMdd") };
+          if (modifyPath ?? true) setPath(AddressF.toShiftPath(newV));
+          return newV;
+        });
+        // setPath(
+        //   (prev) =>
+        //     `${format(start, "yyyyMMdd")}/${prev.split("/")[1] ?? "새 시프트 파일"}`
+        // );
+      } else {
+        setWeekRange([null, null]);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     if (!props.visible) return;
