@@ -290,16 +290,12 @@ ipcMain.handle(
   ): Promise<IpcResponse<void>> =>
     await IpcAction(async () => {
       const win = BrowserWindow.fromId(winId);
-      dialog.showMessageBox(null, {
-        message: `${winId}, ${args.width}, ${args.height}`,
-      });
       if (!win) return;
       const { width, height } = args;
       const resizable = win.resizable;
       win.setResizable(true);
       win.setContentSize(width, height);
       win.setResizable(resizable);
-      dialog.showMessageBox(null, { message: `${height}` });
     })
 );
 

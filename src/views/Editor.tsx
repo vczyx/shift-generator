@@ -6,6 +6,7 @@ import { useLocation, useParams } from "react-router-dom";
 import { ipcRenderer } from "electron";
 import ShiftSelector from "../components/ShiftSelector";
 import util from "../utils/util";
+import AddressF from "../data/Address";
 
 interface EditorProps {
   // contextMenu?: RefObject<ContextMenuHandle>;
@@ -67,7 +68,6 @@ const Editor: React.FC<EditorProps> = (props) => {
         const winId = parseInt(
           new URLSearchParams(location.search).get("winId") || "0"
         );
-        alert(getWinId());
         window.electron?.setWindowSize(getWinId(), {
           width: Math.round(width),
           height: Math.round(height),
@@ -152,7 +152,7 @@ const Editor: React.FC<EditorProps> = (props) => {
     },
     save: async (showMsg: boolean = true) => {
       const res = await window.electron.writeFile(
-        `data/${address.brand}/${address.area}/${address.restaurant}/${address.shift}.json`,
+        `data/${AddressF.toPath(address)}.json`,
         JSON.stringify(shiftData.week, null, 2),
         true
       );

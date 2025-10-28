@@ -5,6 +5,8 @@ import React, {
   useRef,
   useState,
   useImperativeHandle,
+  SetStateAction,
+  Dispatch,
 } from "react";
 import ShiftF from "../../data/ShiftF";
 import ShiftWorker from "./ShiftWorker";
@@ -30,6 +32,7 @@ import {
 } from "chart.js";
 import { Chart } from "react-chartjs-2";
 import { ContextMenuHandle, ContextMenuItemData } from "../ContextMenu";
+import EditableText from "../EditableText";
 
 // ChartJS 설정
 ChartJS.register(
@@ -56,7 +59,7 @@ export interface ShiftDayProps {
   infoRef: RefObject<any>;
   openAddPanel: (wd?: WeekDays) => void;
   shiftInfo: ShiftInformation;
-  setShiftData: (data: Shift) => void;
+  setShiftData: Dispatch<SetStateAction<Shift>>;
 }
 
 export interface ShiftDayHandle {
@@ -295,10 +298,25 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
       handleOnChangedWorkers();
       setPlannedUsage(() => {
         const plan = ShiftF.getWeekPlannedUsageTime(shiftInfo, weekDay);
-        setSmh(plan > 0 ? (expectedSale * 1000) / plan : 0);
         return plan;
       });
-    }, [shiftInfo, expectedSale]);
+    }, [shiftInfo]);
+
+    const refreshSMH = () => {
+      setSmh(plannedUsage > 0 ? (expectedSale * 1000) / plannedUsage : 0);
+      console.log(expectedSale, plannedUsage);
+    };
+
+    useEffect(() => refreshSMH(), [expectedSale, plannedUsage]);
+    useEffect(() => {
+      setShiftData((prev) => {
+        const newValue: Shift = { ...prev };
+        newValue.week.days[weekDay].expectedSales = expectedSale;
+        newValue.week.days[weekDay].targetSales = targetSale;
+        newValue.week.days[weekDay].targetUsageTime = targetUsage;
+        return newValue;
+      });
+    }, [expectedSale, plannedUsage, targetSale, targetUsage]);
 
     /**
      * Effect
@@ -460,7 +478,15 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
                       목표 매출
                     </div>
                     <div className="editor-shift-day-footer-value">
-                      {targetSale.toLocaleString("ko-kr")}
+                      {/* {targetSale.toLocaleString("ko-kr")} */}
+                      <EditableText
+                        type="number"
+                        value={targetSale}
+                        onChangeValue={(v) =>
+                          setTargetSale(parseInt(v.toString()))
+                        }
+                        defaultInputAttributes={{}}
+                      />
                     </div>
                   </div>
                   <div className="editor-shift-day-footer-valuewrapper">
@@ -468,7 +494,16 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
                       예상 매출
                     </div>
                     <div className="editor-shift-day-footer-value">
-                      {expectedSale.toLocaleString("ko-kr")}
+                      <EditableText
+                        type="number"
+                        value={expectedSale}
+                        onChangeValue={(v) => {
+                          setExpectedSale(parseInt(v.toString()));
+
+                          console.log("expe", parseInt(v.toString()));
+                        }}
+                        defaultInputAttributes={{}}
+                      />
                     </div>
                   </div>
                 </div>
@@ -478,7 +513,14 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
                       목표 시간
                     </div>
                     <div className="editor-shift-day-footer-value">
-                      {targetUsage.toLocaleString("ko-kr")}
+                      <EditableText
+                        type="number"
+                        value={targetUsage}
+                        onChangeValue={(v) =>
+                          setTargetUsage(parseInt(v.toString()))
+                        }
+                        defaultInputAttributes={{}}
+                      />
                     </div>
                   </div>
                   <div className="editor-shift-day-footer-valuewrapper">

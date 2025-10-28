@@ -1,4 +1,11 @@
-import React, { RefObject, useEffect, useRef, useState } from "react";
+import React, {
+  Dispatch,
+  RefObject,
+  SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import ShiftDay, { ShiftDayHandle } from "./ShiftDay";
 import "../../styles/components/editor/ShiftWeek.css";
 import ContextMenu, {
@@ -14,7 +21,7 @@ import ShiftWorkerInfo from "./ShiftWorkerInfo";
 interface ShiftWeekProps {
   contextMenu: RefObject<ContextMenuHandle>;
   shiftInfo: ShiftInformation;
-  setShiftData: (data: Shift) => void;
+  setShiftData: Dispatch<SetStateAction<Shift>>;
   menuAction: {
     save: () => Promise<void>;
     saveAs: () => Promise<void>;
