@@ -1,19 +1,12 @@
 import ShiftWeek from "../components/editor/ShiftWeek";
 import "../styles/Editor.css";
 import ContextMenu, { ContextMenuHandle } from "../components/ContextMenu";
-import {
-  RefObject,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { ipcRenderer } from "electron";
 import ShiftSelector from "../components/ShiftSelector";
 import util from "../utils/util";
 import AddressF from "../data/Address";
+import Notification, { NotificationHandles } from "../components/Notification";
 
 interface EditorProps {
   // contextMenu?: RefObject<ContextMenuHandle>;
@@ -37,10 +30,13 @@ const Editor: React.FC<EditorProps> = (props) => {
   const [shiftData, setShiftData] = useState<Shift>(null);
   const [shiftSelector, setShiftSelector] = useState(false);
   const [mode, setMode] = useState<"saveas" | "open">("saveas");
-
   const [dirInfo, setDirInfo] = useState<{
     [date: string]: string[];
   }>();
+  const [notiMsg, setNotiMsg] = useState("");
+
+  const notiRef = useRef<NotificationHandles | null>(null);
+  const divRef = useRef<HTMLDivElement>(null);
 
   const display = {
     saveas: {
@@ -61,7 +57,14 @@ const Editor: React.FC<EditorProps> = (props) => {
 
   const getDate = () =>
     shiftData?.firstDate ?? util.parseYYYYMMDD(address.date);
-  const divRef = useRef<HTMLDivElement>(null);
+
+  const showNoti = useCallback(
+    (message: string) => {
+      setNotiMsg(message);
+      notiRef.current?.show();
+    },
+    [notiRef]
+  );
 
   const setWinSize = useCallback(() => {
     requestAnimationFrame(() => {
@@ -168,25 +171,12 @@ const Editor: React.FC<EditorProps> = (props) => {
       );
       if (!showMsg ?? true) return;
       if (res.success) {
-        await window.electron.showMsgBox(
-          {
-            type: "info",
-            title: "저장 완료",
-            message: "성공적으로 저장되었습니다.",
-            buttons: ["확인"],
-          },
-          getWinId()
-        );
+        showNoti("저장되었습니다");
       } else {
-        await window.electron.showMsgBox(
-          {
-            type: "error",
-            title: "오류",
-            message: "저장을 완료하지 못했습니다. " + res.error,
-            buttons: ["확인"],
-          },
-          getWinId()
+        showNoti(
+          "저장을 완료하지 못했습니다. 자세한 내용은 Console을 확인하십시오."
         );
+        console.error(res.error);
       }
     },
     [getWinId]
@@ -233,15 +223,7 @@ const Editor: React.FC<EditorProps> = (props) => {
       if (afterSaveCallBack) await afterSaveCallBack();
       const res = await window.electron.closeWindow(getWinId());
       if (!res.success) {
-        await window.electron.showMsgBox(
-          {
-            type: "error",
-            title: "오류",
-            message: "종료 수행을 완료하지 못했습니다." + res.error,
-            buttons: ["확인"],
-          },
-          getWinId()
-        );
+        showNoti("종료하지 못했습니다.");
       }
     },
     [address]
@@ -313,6 +295,7 @@ const Editor: React.FC<EditorProps> = (props) => {
         />
       )}
       <ContextMenu enabled ref={contextMenuRef} />
+      <Notification ref={notiRef} message={notiMsg} time={1000} />
     </>
   );
 };
