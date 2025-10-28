@@ -6,6 +6,7 @@ import {
   BrowserWindowConstructorOptions,
   MessageBoxOptions,
   MessageBoxReturnValue,
+  globalShortcut,
 } from "electron";
 import fs, { constants } from "fs/promises";
 import * as path from "path";
@@ -96,10 +97,10 @@ ipcMain.handle(
       );
       const win = BrowserWindow.fromId(winId);
 
-      // win.on("close", (e) => {
-      //   e.preventDefault();
-      //   win.webContents.send("ask-save");
-      // });
+      win.on("close", (e) => {
+        e.preventDefault();
+        win.webContents.send("ask-save");
+      });
 
       // win.webContents.on("will-prevent-unload", (event) => {
       //   event.preventDefault();
@@ -366,6 +367,35 @@ ipcMain.handle(
     })
 );
 
+ipcMain.handle(
+  "register-shortcut",
+  async (
+    _event,
+    winId: number,
+    items: [shortcut: string, channel: string][]
+  ): Promise<IpcResponse<void>> =>
+    await IpcAction(async () => {
+      const win = BrowserWindow.fromId(winId);
+      if (!win) throw new Error("invalid window id");
+
+      items.forEach(([scut, ch]) => {
+        const sendChannel = `shortcut-${ch}`;
+        globalShortcut.register(scut, () => {
+          try {
+            if (
+              win &&
+              win?.isFocused() &&
+              !win.isDestroyed() &&
+              !win.webContents.isDestroyed()
+            ) {
+              win?.webContents?.send(sendChannel);
+            }
+          } catch {}
+        });
+      });
+    })
+);
+
 const openWindow = (
   view?: string,
   options?: BrowserWindowConstructorOptions
@@ -443,6 +473,12 @@ const onReady = async (): Promise<void> => {
     JSON.stringify(TestShiftData.week, null, 2)
   );
 };
+
+const onWillQuit = () => {
+  globalShortcut.unregisterAll();
+};
+
+app.on("will-quit", onWillQuit);
 
 app.on("ready", onReady);
 app.on("ready", createWindow);

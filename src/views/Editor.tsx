@@ -37,6 +37,8 @@ const Editor: React.FC<EditorProps> = (props) => {
 
   const notiRef = useRef<NotificationHandles | null>(null);
   const divRef = useRef<HTMLDivElement>(null);
+  const shiftDataRef = useRef<Shift>(shiftData);
+  const addressRef = useRef<Address>(address);
 
   const display = {
     saveas: {
@@ -87,14 +89,19 @@ const Editor: React.FC<EditorProps> = (props) => {
   }, []);
 
   useEffect(() => {
+    shiftDataRef.current = shiftData;
+  }, [shiftData]);
+  useEffect(() => {
+    addressRef.current = address;
+  }, [address]);
+
+  useEffect(() => {
     (async () => {
       const brandConfigRes = await window.electron.getBrandConfig(
         address.brand
       );
       if (!brandConfigRes.success) {
-        window.alert(
-          "BRAND CONFIG를 불러오는 데에 실패했습니다. 자세한 내용은 Console을 확인하십시오."
-        );
+        showNoti("BRAND CONFIG를 불러오는 데에 실패했습니다.");
         console.error(brandConfigRes.error);
         return;
       }
@@ -102,9 +109,7 @@ const Editor: React.FC<EditorProps> = (props) => {
 
       const shiftRes = await window.electron.getShift(address);
       if (!shiftRes.success) {
-        window.alert(
-          "SHIFT DATA를 불러오는 데에 실패했습니다. 자세한 내용은 Console을 확인하십시오."
-        );
+        showNoti("SHIFT DATA를 불러오는 데에 실패했습니다. ");
         console.error(shiftRes.error);
         return;
       }
@@ -127,9 +132,33 @@ const Editor: React.FC<EditorProps> = (props) => {
     window.addEventListener("beforeunload", handle);
     return window.removeEventListener("beforeunload", handle);
   }, []);
+  // SHORT CUT 등록 ====================================
+
+  // Ctrl(Command)+S
+  useEffect(() => {
+    const handle = () => {
+      save(addressRef.current, shiftDataRef.current, true);
+    };
+
+    window.electron.onShortcut("save", handle);
+    return window.electron.clearShortcut("save", handle);
+  }, []);
+
+  // Ctrl(Command)+W
+  useEffect(() => {
+    const handle = () => {
+      exit(shiftDataRef.current);
+    };
+
+    window.electron.onShortcut("close", handle);
+    return window.electron.clearShortcut("close", handle);
+  }, []);
 
   useEffect(() => {
-    window.electron.onAskSave(() => exit(shiftData));
+    const handle = () => exit(shiftDataRef.current);
+
+    window.electron.onAskSave(handle);
+    return window.electron.clearAskSave(handle);
   }, []);
 
   const askSave = useCallback(async (): Promise<boolean | null> => {
@@ -173,13 +202,11 @@ const Editor: React.FC<EditorProps> = (props) => {
       if (res.success) {
         showNoti("저장되었습니다");
       } else {
-        showNoti(
-          "저장을 완료하지 못했습니다. 자세한 내용은 Console을 확인하십시오."
-        );
+        showNoti("저장을 완료하지 못했습니다.");
         console.error(res.error);
       }
     },
-    [getWinId]
+    []
   );
 
   const saveAs = useCallback(

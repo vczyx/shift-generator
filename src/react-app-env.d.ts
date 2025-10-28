@@ -25,6 +25,13 @@ interface Window {
     ) => Promise<IpcResponse<void>>;
     openDevTool: (winId: number) => Promise<IpcResponse<void>>;
     closeWindow: (winId: number) => Promise<IpcResponse<void>>;
+    registerShortcut: (
+      winId: number,
+      items: [shortcut: string, channel: string][]
+    ) => Promise<IpcResponse<void>>;
     onAskSave: (callback: () => void) => void;
+    clearAskSave: (callback: () => void) => void;
+    onShortcut: (channel: string, callback: (event: any) => void) => void;
+    clearShortcut: (channel: string, callback: (event: any) => void) => void;
   };
 }

@@ -22,6 +22,16 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("set-window-size", winId, args),
   openDevTool: (winId: number) => ipcRenderer.invoke("open-dev-tool", winId),
   closeWindow: (winId: number) => ipcRenderer.invoke("close-window", winId),
+  registerShortcut: (
+    winId: number,
+    items: [shortcut: string, channel: string][]
+  ) => ipcRenderer.invoke("register-shortcut", winId, items),
   onAskSave: (callback: (event: any) => void) =>
     ipcRenderer.on("ask-save", callback),
+  clearAskSave: (callback: (event: any) => void) =>
+    ipcRenderer.removeListener("ask-save", callback),
+  onShortcut: (channel: string, callback: (event: any) => void) =>
+    ipcRenderer.on(`shortcut-${channel}`, callback),
+  clearShortcut: (channel: string, callback: (event: any) => void) =>
+    ipcRenderer.removeListener(`shortcut-${channel}`, callback),
 });
