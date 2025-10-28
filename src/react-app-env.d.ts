@@ -10,21 +10,9 @@ interface Window {
       currentDirPath: boolean = false
     ) => Promise<IpcResponse<void>>;
     openFileDialog: () => Promise<string | null>;
-    openEditor: (
-      brand: string,
-      area: string,
-      restaurant: string,
-      date: string,
-      shift: string
-    ) => number;
+    openEditor: (adr: Address) => Promise<IpcResponse<number>>;
     getDataInfo: () => Promise<IpcResponse<GetDataInfoResponse>>;
-    getShift: (
-      brand: string,
-      area: string,
-      restaurant: string,
-      date: string,
-      shift: string
-    ) => Promise<IpcResponse<Shift>>;
+    getShift: (adr: Address) => Promise<IpcResponse<Shift>>;
     getBrandConfig: (brand: string) => Promise<IpcResponse<BrandConfig>>;
     getDirectoryInfo: (path: string) => Promise<IpcResponse<DirectoryInfo>>;
     showMsgBox: (

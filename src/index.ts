@@ -81,11 +81,7 @@ ipcMain.handle(
   "open-editor",
   async (
     _event,
-    brand: string,
-    area: string,
-    restaurant: string,
-    date: string,
-    shift: string
+    { brand, area, restaurant, date, shift }
   ): Promise<IpcResponse<number>> =>
     await IpcAction(async () => {
       const winId = openWindow(
@@ -99,10 +95,15 @@ ipcMain.handle(
       );
       const win = BrowserWindow.fromId(winId);
 
-      win.on("close", (e) => {
-        e.preventDefault();
-        win.webContents.send("ask-save");
-      });
+      // win.on("close", (e) => {
+      //   e.preventDefault();
+      //   win.webContents.send("ask-save");
+      // });
+
+      // win.webContents.on("will-prevent-unload", (event) => {
+      //   event.preventDefault();
+      //   win.webContents.send("ask-save");
+      // });
 
       return winId;
     })
@@ -194,11 +195,7 @@ ipcMain.handle(
   "get-shift",
   async (
     _event,
-    brand: string,
-    area: string,
-    restaurant: string,
-    date: string,
-    shift: string
+    { brand, area, restaurant, date, shift }
   ): Promise<IpcResponse<Shift>> =>
     await IpcAction(async () => ({
       workers: JSON.parse(

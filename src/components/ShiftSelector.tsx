@@ -48,13 +48,13 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = (props) => {
     return [monday, sunday];
   };
 
-  const handleChange = (date: Date | null) => {
+  const handleChange = (date: Date | null, modifyPath?: boolean) => {
     if (date) {
       const [start, end] = getWeekRange(date);
       setWeekRange([start, end]);
       setCurAddress((prev) => {
         const newV = { ...prev, date: format(start, "yyyyMMdd") };
-        setPath(AddressF.toShiftPath(newV));
+        if (modifyPath ?? true) setPath(AddressF.toShiftPath(newV));
         return newV;
       });
       // setPath(
@@ -72,11 +72,24 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = (props) => {
     setCurAddress(props.defaultAddress);
     handleChange(AddressF.getDate(props.defaultAddress));
     setError("");
+    inputRef.current?.focus();
   }, [props.visible]);
+
+  useEffect(() => {
+    if (!util.isValidDateYYYYMMDD(curAddress.date))
+      setError("날짜가 유효하지 않습니다.");
+    else if (!!!curAddress.shift.trim()) setError("이름을 입력하세요.");
+    else if (
+      !(props?.options?.newFile ?? true) &&
+      !props.dirInfos[curAddress.date]?.includes(curAddress.shift + ".json")
+    )
+      setError("파일이 존재하지 않습니다.");
+    else setError("");
+  }, [curAddress]);
 
   const handleSelect = () => {
     if (error !== "") return;
-    props.setVisible(false);
+    // props.setVisible(false);
     props.onSelected(curAddress);
   };
 
@@ -88,8 +101,12 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = (props) => {
           opacity: props.visible ? 1 : 0,
           pointerEvents: props.visible ? "auto" : "none",
         }}
+        onMouseDown={() => props.setVisible(false)}
       >
-        <div className="overay-panel shiftselector">
+        <div
+          className="overay-panel shiftselector"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           <h2>{props?.display?.title ?? "시프트 파일을 선택하세요."}</h2>
           <p>
             {props?.display?.descriptions ??
@@ -122,7 +139,8 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = (props) => {
                   curAddress.date === format(weekRange[0], "yyyyMMdd") &&
                   !props.dirInfos[format(weekRange[0], "yyyyMMdd")]?.includes(
                     curAddress.shift + ".json"
-                  ) && (
+                  ) &&
+                  !!curAddress.shift.trim() && (
                     <li
                       className="shiftselector-item button"
                       style={{
@@ -184,22 +202,17 @@ const ShiftSelector: React.FC<ShiftSelectorProps> = (props) => {
                 setCurAddress((prev) => {
                   const path = e.target.value;
                   const adr = AddressF.fromShiftPath(path, prev);
-                  setPath(path);
-                  if (adr?.date) handleChange(AddressF.getDate(adr));
+
+                  if (adr?.date) handleChange(AddressF.getDate(adr), false);
                   if (!adr?.shift) adr.shift = "";
-                  if (
-                    !(props?.options?.newFile ?? true) &&
-                    !props.dirInfos[adr.date]?.includes(adr.shift + ".json")
-                  )
-                    setError("파일이 존재하지 않습니다.");
-                  else setError("");
-                  return adr ?? prev;
+                  setPath(path);
+                  console.log(adr);
+                  return adr;
                 })
               }
               onKeyDown={(e) => {
-                if (e.key === "enter") {
-                  handleChange(util.parseYYYYMMDD(path.split("/")[0]));
-                }
+                if (e.key === "Enter") handleSelect();
+                else if (e.key === "Escape") props.setVisible(false);
               }}
             />
             <br />

@@ -1,7 +1,14 @@
 import ShiftWeek from "../components/editor/ShiftWeek";
 import "../styles/Editor.css";
 import ContextMenu, { ContextMenuHandle } from "../components/ContextMenu";
-import { RefObject, useCallback, useEffect, useRef, useState } from "react";
+import {
+  RefObject,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { ipcRenderer } from "electron";
 import ShiftSelector from "../components/ShiftSelector";
@@ -90,13 +97,7 @@ const Editor: React.FC<EditorProps> = (props) => {
       }
       setBrandConfig(brandConfigRes.data);
 
-      const shiftRes = await window.electron.getShift(
-        address.brand,
-        address.area,
-        address.restaurant,
-        address.date,
-        address.shift
-      );
+      const shiftRes = await window.electron.getShift(address);
       if (!shiftRes.success) {
         window.alert(
           "SHIFT DATA를 불러오는 데에 실패했습니다. 자세한 내용은 Console을 확인하십시오."
@@ -117,10 +118,19 @@ const Editor: React.FC<EditorProps> = (props) => {
   }, [address]);
 
   useEffect(() => {
-    window.electron.onAskSave(menuActions.exit);
+    const handle = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handle);
+    return window.removeEventListener("beforeunload", handle);
   }, []);
 
-  const askSave = async (): Promise<boolean | null> => {
+  useEffect(() => {
+    window.electron.onAskSave(() => exit(shiftData));
+  }, []);
+
+  const askSave = useCallback(async (): Promise<boolean | null> => {
     const res = await window.electron.showMsgBox(
       {
         type: "question",
@@ -144,19 +154,16 @@ const Editor: React.FC<EditorProps> = (props) => {
       case 0:
         return null;
     }
-  };
+  }, []);
 
-  const menuActions = {
-    openDevTool: async () => {
-      window.electron.openDevTool(getWinId());
-    },
-    save: async (showMsg: boolean = true) => {
+  const save = useCallback(
+    async (adr: Address, data: Shift, showMsg?: boolean) => {
       const res = await window.electron.writeFile(
-        `data/${AddressF.toPath(address)}.json`,
-        JSON.stringify(shiftData.week, null, 2),
+        `data/${AddressF.toPath(adr)}.json`,
+        JSON.stringify(data.week, null, 2),
         true
       );
-      if (!showMsg) return;
+      if (!showMsg ?? true) return;
       if (res.success) {
         await window.electron.showMsgBox(
           {
@@ -179,20 +186,49 @@ const Editor: React.FC<EditorProps> = (props) => {
         );
       }
     },
-    saveAs: async () => {
-      setMode("saveas");
-      setShiftSelector(true);
-    },
-    open: async () => {
-      setMode("open");
-      setShiftSelector(true);
-    },
-    newFile: async () => {},
-    exit: async () => {
-      const isSave = await askSave();
+    [getWinId]
+  );
 
+  const saveAs = useCallback(
+    async (newAdr: Address) => {
+      if (!AddressF.equals(address, newAdr)) {
+        const msgRes = await window.electron.showMsgBox(
+          {
+            type: "question",
+            title: "다른 이름으로 저장",
+            message: dirInfo[newAdr.date].includes(newAdr.shift + ".json")
+              ? "해당 위치에 이미 파일이 존재합니다. 덮어씌우시겠습니까?"
+              : "해당 위치에 저장하시겠습니까?",
+            buttons: ["아니요", "예"],
+          },
+          getWinId()
+        );
+        if (msgRes.data.response === 0) return;
+
+        setAddress(newAdr);
+      }
+      setShiftSelector(false);
+      save(newAdr, shiftData, true);
+    },
+    [shiftData, address]
+  );
+
+  const open = useCallback(
+    async (newAdr: Address) => {
+      console.log(shiftData);
+      exit(shiftData, async () => {
+        await window.electron.openEditor(newAdr);
+      });
+    },
+    [shiftData]
+  );
+
+  const exit = useCallback(
+    async (data: Shift, afterSaveCallBack?: () => Promise<void>) => {
+      const isSave = await askSave();
       if (isSave === null) return;
-      if (isSave === true) await menuActions.save(false);
+      if (isSave === true) await save(address, data, false);
+      if (afterSaveCallBack) await afterSaveCallBack();
       const res = await window.electron.closeWindow(getWinId());
       if (!res.success) {
         await window.electron.showMsgBox(
@@ -206,7 +242,32 @@ const Editor: React.FC<EditorProps> = (props) => {
         );
       }
     },
-  };
+    [address]
+  );
+
+  const menuActions = useMemo(
+    () => ({
+      openDevTool: async () => {
+        window.electron.openDevTool(getWinId());
+      },
+      save: async (showMsg: boolean = true) => {
+        await save(address, shiftData, showMsg);
+      },
+      saveAs: async () => {
+        setMode("saveas");
+        setShiftSelector(true);
+      },
+      open: async () => {
+        setMode("open");
+        setShiftSelector(true);
+      },
+      newFile: async () => {},
+      exit: async () => {
+        await exit(shiftData);
+      },
+    }),
+    [address, shiftData]
+  );
 
   return (
     <>
@@ -230,8 +291,17 @@ const Editor: React.FC<EditorProps> = (props) => {
           visible={shiftSelector}
           setVisible={setShiftSelector}
           defaultAddress={address}
-          onSelected={(d) => {
-            window.alert(`${d.date}/${d.shift}`);
+          onSelected={(newAdr) => {
+            switch (mode) {
+              case "saveas": {
+                saveAs(newAdr);
+                break;
+              }
+              case "open": {
+                open(newAdr);
+                break;
+              }
+            }
           }}
           dirInfos={dirInfo}
           options={{ newFile: mode === "saveas" }}

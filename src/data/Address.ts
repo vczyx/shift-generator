@@ -31,5 +31,14 @@ const AddressF = {
   getDate: (adr: Address): Date => {
     return util.parseYYYYMMDD(adr.date);
   },
+  equals: (adr1: Address, adr2: Address): boolean => {
+    return (
+      adr1.brand === adr2.brand &&
+      adr1.area === adr2.area &&
+      adr1.restaurant === adr2.restaurant &&
+      adr1.date === adr2.date &&
+      adr1.shift === adr2.shift
+    );
+  },
 };
 export default AddressF;

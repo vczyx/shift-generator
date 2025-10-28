@@ -1,3 +1,5 @@
+import { getDate, getMonth, getYear } from "date-fns";
+
 export type OperationSymbol =
   | "==="
   | "!=="
@@ -63,6 +65,28 @@ const util = {
 
     const [, year, month, day] = match;
     return new Date(Number(year), Number(month) - 1, Number(day));
+  },
+  parseYYYYMMDDx: (
+    dateStr: string
+  ): { year: number; month: number; day: number } => {
+    const match = dateStr.match(/^(\d{4})(\d{2})(\d{2})$/);
+    if (!match) return null;
+
+    const [, year, month, day] = match;
+    return { year: Number(year), month: Number(month) - 1, day: Number(day) };
+  },
+
+  isValidDateYYYYMMDD: (dateStr: string): boolean => {
+    const regex = /^(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])$/;
+    if (!regex.test(dateStr)) return false;
+
+    const { year, month, day } = util.parseYYYYMMDDx(dateStr);
+    const date = new Date(year, month - 1, day);
+    return (
+      date.getFullYear() === getYear(date) &&
+      date.getMonth() === getMonth(date) &&
+      date.getDate() === getDate(date)
+    );
   },
 };
 

@@ -9,21 +9,9 @@ contextBridge.exposeInMainWorld("electron", {
   writeFile: (filePath: string, content: string, currentDirPath: boolean) =>
     ipcRenderer.invoke("write-file", filePath, content, currentDirPath),
   openFileDialog: () => ipcRenderer.invoke("open-file-dialog"),
-  openEditor: (
-    brand: string,
-    area: string,
-    restaurant: string,
-    date: string,
-    shift: string
-  ) => ipcRenderer.invoke("open-editor", brand, area, restaurant, date, shift),
+  openEditor: (adr: Address) => ipcRenderer.invoke("open-editor", adr),
   getDataInfo: () => ipcRenderer.invoke("get-data-info"),
-  getShift: (
-    brand: string,
-    area: string,
-    restaurant: string,
-    date: string,
-    shift: string
-  ) => ipcRenderer.invoke("get-shift", brand, area, restaurant, date, shift),
+  getShift: (adr: Address) => ipcRenderer.invoke("get-shift", adr),
   getBrandConfig: (brand: string) =>
     ipcRenderer.invoke("get-brand-config", brand),
   getDirectoryInfo: (path: string) =>

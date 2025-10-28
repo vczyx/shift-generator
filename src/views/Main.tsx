@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import FileExplorer from "../components/FileExplorer";
+import AddressF from "../data/Address";
 
 const Main: React.FC = () => {
   const [brand, setBrand] = useState("KFC");
@@ -21,7 +22,7 @@ const Main: React.FC = () => {
       <input value={shift} onChange={(e) => setShift(e.target.value)}></input>
       <button
         onClick={() =>
-          window.electron.openEditor(brand, area, restaurant,date, shift)
+          window.electron.openEditor({ brand, area, restaurant, date, shift })
         }
       >
         Open Editor

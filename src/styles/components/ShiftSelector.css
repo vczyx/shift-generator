@@ -26,8 +26,9 @@
 .shiftselector-itemcontainer {
   border: 1px solid black;
   padding: 2px;
-  flex: 1;
   overflow-y: scroll;
+  width: 300px;
+  height: 205px !important;
 }
 .shiftselector-path {
   outline: none;
@@ -47,5 +48,6 @@
   font-size: 10;
   color: brown;
 }
-/* .shiftselector-item {
-} */
+.shiftselector-item {
+  overflow-wrap: break-word;
+}
