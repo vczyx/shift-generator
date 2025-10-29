@@ -7,3 +7,19 @@
   font-weight: bold;
   user-select: none;
 }
+.editor-menuwrapper {
+  display: flex;
+  user-select: none;
+}
+.editor-menuitem {
+  padding: 5px 15px;
+  transition: all 0.1s ease-in-out;
+}
+
+.editor-menuitem:hover {
+  background-color: #eee;
+}
+
+.editor-menuitem:active {
+  background-color: #aaa;
+}

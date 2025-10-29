@@ -19,174 +19,175 @@ interface ShiftWorkerInfoProps {
   setShiftData: (data: Shift) => void;
 }
 
-const ShiftWorkerInfo = forwardRef<unknown, ShiftWorkerInfoProps>(
-  (props, ref) => {
-    // 기본 값
-    const worker = ShiftF.getWorker(props.shiftInfo, props.getWId());
-    const roleData = worker
-      ? ShiftF.getRoleData(props.shiftInfo, worker)
-      : null;
+export interface ShiftWorkerInfoHandles {
+  handleMouseEnter: (e: React.MouseEvent<HTMLDivElement>) => void;
+  handleMouseLeave: (e: React.MouseEvent<HTMLDivElement>) => void;
+  handleMouseMove: (e: MouseEvent) => void;
+}
 
-    // Ref 설정
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
+const ShiftWorkerInfo = forwardRef<
+  ShiftWorkerInfoHandles,
+  ShiftWorkerInfoProps
+>((props, ref) => {
+  // 기본 값
+  const worker = ShiftF.getWorker(props.shiftInfo, props.getWId());
+  const roleData = worker ? ShiftF.getRoleData(props.shiftInfo, worker) : null;
 
-    // State 설정
-    const [position, setPosition] = useState({ x: 0, y: 0 });
-    const [show, setShow] = useState(false);
-    const mouseCheck = useRef<boolean>(false);
+  // Ref 설정
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-    // forwardRef Handlers
-    const handlers = {
-      handleMouseEnter: (e: React.MouseEvent<HTMLDivElement>) => {
-        timerRef.current = setTimeout(() => {
-          mouseCheck.current = true;
-          handlers.handleMouseMove(e.nativeEvent);
-          setShow(true);
-        }, 500);
-      },
-      handleMouseLeave: (e: React.MouseEvent<HTMLDivElement>) => {
-        clearTimeout(timerRef.current);
-        setShow(false);
-        mouseCheck.current = false;
-      },
-      handleMouseMove: (e: MouseEvent) => {
-        if (!mouseCheck.current) return;
-        // const tooltipWidth = 200; // 예상 툴팁 너비
-        // const tooltipHeight = 200; // 예상 툴팁 높이
-        const padding = 10;
+  // State 설정
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [show, setShow] = useState(false);
+  const mouseCheck = useRef<boolean>(false);
 
-        let x = e.clientX + padding;
-        let y = e.clientY + padding;
+  // forwardRef Handlers
+  const handlers = {
+    handleMouseEnter: (e: React.MouseEvent<HTMLDivElement>) => {
+      timerRef.current = setTimeout(() => {
+        mouseCheck.current = true;
+        handlers.handleMouseMove(e.nativeEvent);
+        setShow(true);
+      }, 500);
+    },
+    handleMouseLeave: (e: React.MouseEvent<HTMLDivElement>) => {
+      clearTimeout(timerRef.current);
+      setShow(false);
+      mouseCheck.current = false;
+    },
+    handleMouseMove: (e: MouseEvent) => {
+      if (!mouseCheck.current) return;
+      // const tooltipWidth = 200; // 예상 툴팁 너비
+      // const tooltipHeight = 200; // 예상 툴팁 높이
+      const padding = 10;
 
-        // // 화면 너비/높이 가져오기
-        // const screenWidth = window.innerWidth;
-        // const screenHeight = window.innerHeight;
+      let x = e.clientX + padding;
+      let y = e.clientY + padding;
 
-        // // 오른쪽으로 벗어날 경우 왼쪽으로 위치 조정
-        // if (x + tooltipWidth > screenWidth) {
-        //   x = e.clientX - tooltipWidth - padding;
-        // }
+      // // 화면 너비/높이 가져오기
+      // const screenWidth = window.innerWidth;
+      // const screenHeight = window.innerHeight;
 
-        // // 아래쪽으로 벗어날 경우 위쪽으로 위치 조정
-        // if (y + tooltipHeight > screenHeight) {
-        //   y = e.clientY - tooltipHeight - padding;
-        // }
+      // // 오른쪽으로 벗어날 경우 왼쪽으로 위치 조정
+      // if (x + tooltipWidth > screenWidth) {
+      //   x = e.clientX - tooltipWidth - padding;
+      // }
 
-        // // 왼쪽으로 벗어날 경우 오른쪽으로 위치 조정
-        // if (x < 0) {
-        //   x = padding;
-        // }
+      // // 아래쪽으로 벗어날 경우 위쪽으로 위치 조정
+      // if (y + tooltipHeight > screenHeight) {
+      //   y = e.clientY - tooltipHeight - padding;
+      // }
 
-        // // 위쪽으로 벗어날 경우 아래쪽으로 위치 조정
-        // if (y < 0) {
-        //   y = padding;
-        // }
+      // // 왼쪽으로 벗어날 경우 오른쪽으로 위치 조정
+      // if (x < 0) {
+      //   x = padding;
+      // }
 
-        setPosition({ x, y });
-      },
+      // // 위쪽으로 벗어날 경우 아래쪽으로 위치 조정
+      // if (y < 0) {
+      //   y = padding;
+      // }
+
+      setPosition({ x, y });
+    },
+  };
+  useImperativeHandle(ref, () => handlers);
+
+  useEffect(() => {
+    window.addEventListener("mousemove", handlers.handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handlers.handleMouseMove);
     };
-    useImperativeHandle(ref, () => handlers);
+  }, []);
 
-    useEffect(() => {
-      window.addEventListener("mousemove", handlers.handleMouseMove);
-      return () => {
-        window.removeEventListener("mousemove", handlers.handleMouseMove);
-      };
-    }, []);
+  return (
+    <div
+      className="editor-shift-workerinfo"
+      style={{
+        width: "250px",
+        height: show ? "400px" : "0px",
+        top: position.y,
+        left: position.x,
+      }}
+    >
+      {worker && (
+        <div className="editor-shift-workerinfo-contentbox">
+          <table>
+            <thead>
+              <tr>
+                <th colSpan={2}>
+                  {worker.name}{" "}
+                  <p style={{ fontSize: "12" }}>({worker.role})</p>
+                </th>
+              </tr>
+              <tr className="thr"></tr>
+            </thead>
 
-    return (
-      <div
-        className="editor-shift-workerinfo"
-        style={{
-          width: "250px",
-          height: show ? "400px" : "0px",
-          top: position.y,
-          left: position.x,
-        }}
-      >
-        {worker && (
-          <div className="editor-shift-workerinfo-contentbox">
-            <table>
-              <thead>
-                <tr>
-                  <th colSpan={2}>
-                    {worker.name}{" "}
-                    <p style={{ fontSize: "12" }}>({worker.role})</p>
-                  </th>
-                </tr>
-                <tr className="thr"></tr>
-              </thead>
-
-              <tbody>
-                <tr>
-                  <th>직급</th>
-                  <td>
-                    <p
-                      className="editor-shift-workerinfo-rolecard"
-                      style={{
-                        background: ShiftF.getRoleColorGradient(
-                          props.shiftInfo,
-                          worker
-                        ),
-                      }}
-                    >
-                      {roleData.nickname}
+            <tbody>
+              <tr>
+                <th>직급</th>
+                <td>
+                  <p
+                    className="editor-shift-workerinfo-rolecard"
+                    style={{
+                      background: ShiftF.getRoleColorGradient(
+                        props.shiftInfo,
+                        worker
+                      ),
+                    }}
+                  >
+                    {roleData.nickname}
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <th>담당 구역</th>
+                <td>
+                  {
+                    currentConfig.Brand.multiPositionDisplay[
+                      worker.position.length
+                    ]
+                  }
+                  {worker.position.map((x) => (
+                    <p key={x} className="editor-shift-workerinfo-poscard">
+                      {x}
                     </p>
-                  </td>
-                </tr>
-                <tr>
-                  <th>담당 구역</th>
-                  <td>
-                    {
-                      currentConfig.Brand.multiPositionDisplay[
-                        worker.position.length
-                      ]
-                    }
-                    {worker.position.map((x) => (
-                      <p key={x} className="editor-shift-workerinfo-poscard">
-                        {x}
-                      </p>
-                    ))}
-                  </td>
-                </tr>
-                <tr>
-                  <th>입사일</th>
-                  <td>{format(worker.joinDate, "yy-MM-dd")}</td>
-                </tr>
-                <tr>
-                  <th>근속 기한</th>
-                  <td>{ShiftF.getWorkDuration(worker)}</td>
-                </tr>
-                <tr>
-                  <th>보건증 만기일</th>
-                  <td>
-                    {format(worker.healthCertExpiryDate, "yy-MM-dd")} (
-                    {ShiftF.getHealthCertDaysLeft(worker)}일)
-                  </td>
-                </tr>
+                  ))}
+                </td>
+              </tr>
+              <tr>
+                <th>입사일</th>
+                <td>{format(worker.joinDate, "yy-MM-dd")}</td>
+              </tr>
+              <tr>
+                <th>근속 기한</th>
+                <td>{ShiftF.getWorkDuration(worker)}</td>
+              </tr>
+              <tr>
+                <th>보건증 만기일</th>
+                <td>
+                  {format(worker.healthCertExpiryDate, "yy-MM-dd")} (
+                  {ShiftF.getHealthCertDaysLeft(worker)}일)
+                </td>
+              </tr>
 
-                <tr className="thr"></tr>
-                <tr>
-                  <th>최대 근로가능</th>
-                  <td>{roleData.maxUsageTime}h</td>
-                </tr>
-                <tr>
-                  <th>현재 주 근로</th>
-                  <td>
-                    {ShiftF.getTotalWorkingTime(
-                      props.shiftInfo,
-                      currentWorkerId
-                    )}
-                    h
-                  </td>
-                </tr>
-                <tr>
-                  <th>근무 요일</th>
-                  <td>
-                    {ShiftF.getWorkWeekdays(
-                      props.shiftInfo,
-                      currentWorkerId
-                    ).map((wd) => (
+              <tr className="thr"></tr>
+              <tr>
+                <th>최대 근로가능</th>
+                <td>{roleData.maxUsageTime}h</td>
+              </tr>
+              <tr>
+                <th>현재 주 근로</th>
+                <td>
+                  {ShiftF.getTotalWorkingTime(props.shiftInfo, currentWorkerId)}
+                  h
+                </td>
+              </tr>
+              <tr>
+                <th>근무 요일</th>
+                <td>
+                  {ShiftF.getWorkWeekdays(props.shiftInfo, currentWorkerId).map(
+                    (wd) => (
                       <p
                         className="editor-shift-workerinfo-wdcard"
                         key={wd}
@@ -196,16 +197,16 @@ const ShiftWorkerInfo = forwardRef<unknown, ShiftWorkerInfoProps>(
                       >
                         {weekDayKor[wd]}
                       </p>
-                    ))}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    );
-  }
-);
+                    )
+                  )}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+});
 
 export default ShiftWorkerInfo;

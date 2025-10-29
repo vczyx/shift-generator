@@ -17,7 +17,7 @@ export interface ContextMenuItemData {
   enabled?: boolean;
   caption?: string;
   shortInfo?: string;
-  onClick?: (e: React.MouseEvent) => void;
+  onClick?: (e: React.MouseEvent) => void | Promise<void>;
   style?: React.CSSProperties;
   child?: ContextMenuItemData[];
 }
@@ -92,10 +92,6 @@ const ContextMenu = forwardRef<ContextMenuHandle, ContextMenuProps>(
 
       setSubmenuPositions(newPositions);
     }, [childLevel, childVisible]);
-
-    useEffect(() => {
-      console.log(childLevel);
-    }, [childLevel]);
 
     const handleOnBlur = (e: React.FocusEvent) => {
       setVisible(false);

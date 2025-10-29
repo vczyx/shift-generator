@@ -7,12 +7,13 @@ import React, {
   useImperativeHandle,
   SetStateAction,
   Dispatch,
+  useCallback,
 } from "react";
 import ShiftF from "../../data/ShiftF";
-import ShiftWorker from "./ShiftWorker";
+import ShiftWorker, { ShiftWorkerHandles } from "./ShiftWorker";
 import { addDays, format } from "date-fns";
 import "../../styles/components/editor/ShiftDay.css";
-import ShiftWorkerInfo from "./ShiftWorkerInfo";
+import ShiftWorkerInfo, { ShiftWorkerInfoHandles } from "./ShiftWorkerInfo";
 import { weekDayKor } from "../../utils/util";
 import { currentConfig } from "../../data/Config";
 import PartTimeF from "../../data/PartTimeF";
@@ -56,15 +57,18 @@ export interface ShiftDayProps {
   contextMenu: RefObject<ContextMenuHandle>;
   scrollTop: number;
   maxHeight: number;
-  infoRef: RefObject<any>;
+  infoRef: RefObject<ShiftWorkerInfoHandles>;
   openAddPanel: (wd?: WeekDays) => void;
   shiftInfo: ShiftInformation;
   setShiftData: Dispatch<SetStateAction<Shift>>;
+  winId: number;
+  showNoti: (msg: string) => void;
 }
 
 export interface ShiftDayHandle {
   refresh: () => void;
   workerRef: RefObject<HTMLDivElement>;
+  resetWorkers: (ask: boolean) => void;
 }
 
 const weekDayDateAdd: Record<WeekDays, number> = {
@@ -91,6 +95,8 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
       openAddPanel,
       shiftInfo,
       setShiftData,
+      winId,
+      showNoti,
     },
     ref
   ) => {
@@ -119,11 +125,16 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
     const chartRef = useRef<any>(null);
     const workerWrapperRef = useRef<HTMLDivElement>(null);
 
+    const workerCompRefs = useRef<(ShiftWorkerHandles | null)[]>([]);
+
     const handlers: ShiftDayHandle = {
       refresh: () => {
         setWorkers(dayData.workers);
       },
       workerRef: useRef<HTMLDivElement>(null),
+      resetWorkers: (ask: boolean) => {
+        resetWorkers(ask);
+      },
     };
 
     useImperativeHandle(ref, () => handlers);
@@ -134,7 +145,7 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
      *  조건 : window.onModifiedShiftData 커스텀 이벤트가 실행 되었을 때
      *  실행 : state를 재설정하고, 차트 데이터를 설정
      */
-    const handleOnChangedWorkers = () => {
+    const handleOnChangedWorkers = useCallback(() => {
       setWorkers(dayData.workers);
 
       // 차트 데이터 설정 (인원 사용 현황)
@@ -282,7 +293,7 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
           ],
         },
       });
-    };
+    }, [dayData, shiftInfo, weekDay]);
 
     const handleOnDoubleClick = () => {
       onSelect(weekDay, true);
@@ -304,7 +315,6 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
 
     const refreshSMH = () => {
       setSmh(plannedUsage > 0 ? (expectedSale * 1000) / plannedUsage : 0);
-      console.log(expectedSale, plannedUsage);
     };
 
     useEffect(() => refreshSMH(), [expectedSale, plannedUsage]);
@@ -330,32 +340,6 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
       setShiftData(x);
     }, [desc]);
 
-    // useEffect(() => {
-    //   if (!workerWrapperRef.current) return;
-    //   workerWrapperRef.current.scrollTop = scrollTop;
-    // }, [scrollTop]);
-
-    // useEffect(() => {
-    //   const el = workerWrapperRef.current;
-    //   if (!el) return;
-
-    //   const preventScroll = (e: WheelEvent) => {
-    //     e.preventDefault();
-    //   };
-    //   const preventMiddleClick = (e: MouseEvent) => {
-    //     if (e.button === 1) {
-    //       e.preventDefault();
-    //     }
-    //   };
-
-    //   el.addEventListener("wheel", preventScroll, { passive: false });
-    //   el.addEventListener("mousedown", preventMiddleClick);
-    //   return () => {
-    //     el.removeEventListener("wheel", preventScroll);
-    //     el.removeEventListener("mousedown", preventMiddleClick);
-    //   };
-    // }, []);
-
     useEffect(() => {
       workerWrapperRef.current.scrollTop = scrollTop;
     }, [scrollTop]);
@@ -368,6 +352,24 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
       ShiftF.addWorker(shiftInfo, weekDay, wId);
       setWorkers(dayData.workers);
     };
+
+    const resetWorkers = useCallback(async (ask: boolean) => {
+      if (ask) {
+        const askRes = await window.electron.showMsgBox(
+          {
+            type: "question",
+            title: "근무자 초기화",
+            message: `${weekDayKor[weekDay]}요일 근무자를 전부 삭제하시겠습니까?`,
+            buttons: ["취소", "삭제"],
+          },
+          winId
+        );
+
+        if (!askRes.success || askRes.data.response === 0) return;
+      }
+      workerCompRefs.current?.forEach((comp) => comp.remove());
+      showNoti(`${weekDayKor[weekDay]}요일 근무자를 초기화 하였습니다.`);
+    }, []);
 
     /**
      * ContextMenuItem 구성
@@ -388,6 +390,16 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
           //   onClick: () => addWorker(parseInt(id)),
           // })),
           onClick: () => openAddPanel(weekDay),
+        },
+        {
+          type: "button",
+          caption: "초기화",
+          // child: Object.entries(currentShiftData.workers).map(([id, w]) => ({
+          //   type: "button",
+          //   caption: w.name,
+          //   onClick: () => addWorker(parseInt(id)),
+          // })),
+          onClick: () => resetWorkers(true),
         },
         {
           type: "button",
@@ -456,8 +468,8 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
                     height: maxHeight + workerWrapperRef.current?.clientHeight,
                   }}
                 >
-                  {Object.keys(workers).map((wId) => (
-                    <li key={parseInt(wId)}>
+                  {Object.keys(workers).map((wId, i) => (
+                    <li key={i}>
                       <ShiftWorker
                         day={weekDay}
                         workerId={parseInt(wId)}
@@ -466,6 +478,11 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
                         contextMenuItems={getContextMenuItems()}
                         shiftInfo={shiftInfo}
                         setShiftData={setShiftData}
+                        ref={(el) => {
+                          if (!el) return;
+                          workerCompRefs.current[i] = el;
+                        }}
+                        showNoti={showNoti}
                       />
                     </li>
                   ))}

@@ -2,7 +2,10 @@ import React, {
   Dispatch,
   RefObject,
   SetStateAction,
+  forwardRef,
   useEffect,
+  useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -15,25 +18,23 @@ import ContextMenu, {
 import AddWorkerPanel from "./AddWorkerPanel";
 import { days } from "../../utils/util";
 import { currentWorkerId } from "./ShiftWorker";
-import ShiftWorkerInfo from "./ShiftWorkerInfo";
+import ShiftWorkerInfo, { ShiftWorkerInfoHandles } from "./ShiftWorkerInfo";
 
 // Props Interface
 interface ShiftWeekProps {
   contextMenu: RefObject<ContextMenuHandle>;
   shiftInfo: ShiftInformation;
   setShiftData: Dispatch<SetStateAction<Shift>>;
-  menuAction: {
-    save: () => Promise<void>;
-    saveAs: () => Promise<void>;
-    open: () => Promise<void>;
-    exit: () => Promise<void>;
-    newFile: () => Promise<void>;
-    openDevTool: () => Promise<void>;
-  };
   onRendered: () => void;
+  winId: number;
+  showNoti: (msg: string) => void;
 }
 
-const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
+export interface ShiftWeekHandles {
+  addWorker: () => void;
+}
+
+const ShiftWeek = forwardRef<ShiftWeekHandles, ShiftWeekProps>((props, ref) => {
   // STATES
   const [visibles, setVisibles] = useState<Record<WeekDays, boolean>>({
     mon: true,
@@ -57,52 +58,11 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
     setAddPanelVisible(true);
   };
 
-  const menus: {
-    display: string;
-    items?: ContextMenuItemData[];
-    onClick?: () => void;
-  }[] = [
-    {
-      display: "파일",
-      items: [
-        {
-          type: "button",
-          caption: "새 파일",
-          shortInfo: "Ctrl+N",
-          onClick: props.menuAction.newFile,
-        },
-        {
-          type: "button",
-          caption: "열기",
-          shortInfo: "Ctrl+O",
-          onClick: props.menuAction.open,
-        },
-        {
-          type: "button",
-          caption: "저장",
-          shortInfo: "Ctrl+S",
-          onClick: props.menuAction.save,
-        },
-        {
-          type: "button",
-          caption: "다른 이름으로 저장",
-          shortInfo: "Ctrl+Shift+S",
-          onClick: props.menuAction.saveAs,
-        },
-        {
-          type: "button",
-          caption: "종료",
-          shortInfo: "Ctrl+W",
-          onClick: props.menuAction.exit,
-        },
-      ],
-    },
-    { display: "편집", items: [{ type: "button", caption: "asd" }] },
-    { display: "근무자 추가", onClick: openAddPanel },
-    { display: "", onClick: props.menuAction.openDevTool },
-  ];
+  useImperativeHandle(ref, () => ({
+    addWorker: () => openAddPanel(),
+  }));
 
-  const infoRef = useRef<any>(null);
+  const infoRef = useRef<ShiftWorkerInfoHandles | null>(null);
 
   useEffect(() => {
     props.onRendered();
@@ -144,8 +104,6 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
     );
     if (maxHeight !== max) setMaxHeight(max);
     setScrollTop((prev) => {
-      console.log("max", max);
-      console.log("cur", Math.min(Math.max(0, prev + e.deltaY), max));
       return Math.min(Math.max(0, prev + e.deltaY), max);
     });
   };
@@ -154,26 +112,6 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
   return (
     <>
       <div className="editor-shift-week" onWheel={handleOnScroll}>
-        <ul className="editor-shift-week-menuwrapper">
-          {menus.map((x, index) => (
-            <li
-              key={index}
-              onClick={(e) => {
-                if (x.items) {
-                  menuRef.current.openCustom(x.items, {
-                    x: e.currentTarget.offsetLeft,
-                    y: e.currentTarget.offsetTop + e.currentTarget.offsetHeight,
-                  });
-                }
-
-                if (x.onClick) x.onClick();
-              }}
-              className="editor-shift-week-menuitem"
-            >
-              {x.display}
-            </li>
-          ))}
-        </ul>
         <div className="editor-shift-week-daywrapper">
           {days.map((wd, index) => (
             <ShiftDay
@@ -192,6 +130,8 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
               openAddPanel={openAddPanel}
               setShiftData={props.setShiftData}
               shiftInfo={props.shiftInfo}
+              winId={props.winId}
+              showNoti={props.showNoti}
             />
           ))}
         </div>
@@ -214,5 +154,5 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
       />
     </>
   );
-};
+});
 export default ShiftWeek;

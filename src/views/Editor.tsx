@@ -1,6 +1,9 @@
 import ShiftWeek from "../components/editor/ShiftWeek";
 import "../styles/Editor.css";
-import ContextMenu, { ContextMenuHandle } from "../components/ContextMenu";
+import ContextMenu, {
+  ContextMenuHandle,
+  ContextMenuItemData,
+} from "../components/ContextMenu";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import ShiftSelector from "../components/ShiftSelector";
@@ -41,22 +44,25 @@ const Editor: React.FC<EditorProps> = (props) => {
   const shiftDataRef = useRef<Shift>(shiftData);
   const addressRef = useRef<Address>(address);
 
-  const display = {
-    saveas: {
-      title: "다른 이름으로 저장",
-      buttons: {
-        yes: "저장",
-        no: "취소",
+  const display = useMemo(
+    () => ({
+      saveas: {
+        title: "다른 이름으로 저장",
+        buttons: {
+          yes: "저장",
+          no: "취소",
+        },
       },
-    },
-    open: {
-      title: "열기",
-      buttons: {
-        yes: "열기",
-        no: "취소",
+      open: {
+        title: "열기",
+        buttons: {
+          yes: "열기",
+          no: "취소",
+        },
       },
-    },
-  };
+    }),
+    []
+  );
 
   const getDate = () =>
     shiftData?.firstDate ?? util.parseYYYYMMDD(address.date);
@@ -120,17 +126,9 @@ const Editor: React.FC<EditorProps> = (props) => {
         const data = di.data[address.brand][address.area][address.restaurant];
         setDirInfo(data);
       }
-      console.log(address, shiftRes.data);
       setShiftData(shiftRes.data);
     })();
   }, [address]);
-
-  // SHORT CUT 등록 ====================================
-  useShortcut(["ctrl", "s"], () => menuActions.save());
-  useShortcut(["ctrl", "w"], () => menuActions.exit());
-  useShortcut(["ctrl", "shift", "s"], () => menuActions.saveAs());
-  useShortcut(["ctrl", "n"], () => menuActions.newFile());
-  useShortcut(["ctrl", "o"], () => menuActions.open());
 
   useEffect(() => {
     const handle = () => exit(shiftDataRef.current);
@@ -168,7 +166,7 @@ const Editor: React.FC<EditorProps> = (props) => {
   const save = useCallback(
     async (adr: Address, data: Shift, showMsg?: boolean) => {
       if (adr.shift === "undefined") {
-        menuActions.saveAs();
+        menuActions.file.saveAs();
         return;
       }
       const res = await window.electron.writeFile(
@@ -234,30 +232,123 @@ const Editor: React.FC<EditorProps> = (props) => {
     [address]
   );
 
+  // SHORT CUT 등록 ====================================
+  useShortcut(["ctrl", "s"], () => menuActions.file.save());
+  useShortcut(["ctrl", "w"], () => menuActions.file.exit());
+  useShortcut(["ctrl", "shift", "s"], () => menuActions.file.saveAs());
+  useShortcut(["ctrl", "n"], () => menuActions.file.newFile());
+  useShortcut(["ctrl", "o"], () => menuActions.file.open());
+
+  // Menu Item 구성 =====================================
+  const menus = useMemo<
+    {
+      display: string;
+      items?: ContextMenuItemData[];
+      onClick?: () => void;
+    }[]
+  >(
+    () => [
+      {
+        display: "파일",
+        items: [
+          {
+            type: "button",
+            caption: "새 파일",
+            shortInfo: "Ctrl+N",
+            onClick: () => menuActions.file.newFile(),
+          },
+          {
+            type: "button",
+            caption: "열기",
+            shortInfo: "Ctrl+O",
+            onClick: () => menuActions.file.open(),
+          },
+          {
+            type: "button",
+            caption: "저장",
+            shortInfo: "Ctrl+S",
+            onClick: () => menuActions.file.save(),
+          },
+          {
+            type: "button",
+            caption: "다른 이름으로 저장",
+            shortInfo: "Ctrl+Shift+S",
+            onClick: () => menuActions.file.saveAs(),
+          },
+          {
+            type: "button",
+            caption: "종료",
+            shortInfo: "Ctrl+W",
+            onClick: () => menuActions.file.exit(),
+          },
+        ],
+      },
+      {
+        display: "편집",
+        items: [
+          {
+            type: "button",
+            caption: "근무자 추가",
+            shortInfo: "Ctrl+G",
+            onClick: () => menuActions.edit.addWorker(),
+          },
+          {
+            type: "button",
+            caption: "삭제",
+            shortInfo: "Ctrl+D",
+            onClick: () => menuActions.edit.resetWorkers(),
+          },
+          { type: "bar" },
+          {
+            type: "button",
+            caption: "초기화",
+            shortInfo: "Ctrl+Shift+Del",
+            onClick: () => menuActions.edit.resetWorkers(),
+          },
+        ],
+      },
+      { display: "근무자 추가", onClick: () => menuActions.edit.addWorker() },
+      { display: "", onClick: () => menuActions.debug.openDevTool() },
+    ],
+    []
+  );
+
+  // Menu Action 구성 ==========================================
   const menuActions = useMemo(
     () => ({
-      openDevTool: async () => {
-        window.electron.openDevTool(getWinId());
+      file: {
+        save: async () => {
+          if (shiftSelector) return;
+          await save(address, shiftData, true);
+        },
+        saveAs: async () => {
+          if (shiftSelector) return;
+          setMode("saveas");
+          setShiftSelector(true);
+        },
+        open: async () => {
+          if (shiftSelector) return;
+          setMode("open");
+          setShiftSelector(true);
+        },
+        newFile: async () => {
+          await open({ ...address, shift: undefined });
+        },
+        exit: async () => {
+          await exit(shiftData);
+        },
       },
-      save: async (showMsg: boolean = true) => {
-        await save(address, shiftData, showMsg);
+      edit: {
+        addWorker: async () => {},
+        resetWorkers: async () => {},
       },
-      saveAs: async () => {
-        setMode("saveas");
-        setShiftSelector(true);
-      },
-      open: async () => {
-        setMode("open");
-        setShiftSelector(true);
-      },
-      newFile: async () => {
-        await open({ ...address, shift: undefined });
-      },
-      exit: async () => {
-        await exit(shiftData);
+      debug: {
+        openDevTool: async () => {
+          window.electron.openDevTool(getWinId());
+        },
       },
     }),
-    [address, shiftData]
+    [address, shiftData, shiftSelector]
   );
 
   return (
@@ -267,13 +358,34 @@ const Editor: React.FC<EditorProps> = (props) => {
           {address &&
             `[ ${address.brand} ] ${address.area} - ${address.restaurant} (${address.date}/${address.shift})`}
         </div>
+        <ul className="editor-menuwrapper">
+          {menus?.map((x, index) => (
+            <li
+              key={index}
+              onClick={(e) => {
+                if (x.items) {
+                  contextMenuRef.current.openCustom(x.items, {
+                    x: e.currentTarget.offsetLeft,
+                    y: e.currentTarget.offsetTop + e.currentTarget.offsetHeight,
+                  });
+                }
+
+                if (x.onClick) x.onClick();
+              }}
+              className="editor-menuitem"
+            >
+              {x.display}
+            </li>
+          ))}
+        </ul>
         {brandConfig && shiftData && (
           <ShiftWeek
             onRendered={setWinSize}
             contextMenu={contextMenuRef}
             shiftInfo={{ brandConfig, shift: shiftData }}
             setShiftData={setShiftData}
-            menuAction={menuActions}
+            winId={getWinId()}
+            showNoti={showNoti}
           />
         )}
       </div>

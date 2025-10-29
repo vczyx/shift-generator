@@ -21,9 +21,17 @@ const Main: React.FC = () => {
       <input value={date} onChange={(e) => setDate(e.target.value)}></input>
       <input value={shift} onChange={(e) => setShift(e.target.value)}></input>
       <button
-        onClick={() =>
-          window.electron.openEditor({ brand, area, restaurant, date, shift })
-        }
+        onClick={async () => {
+          const res = await window.electron.openEditor({
+            brand,
+            area,
+            restaurant,
+            date,
+            shift,
+          });
+
+          if (res.success) await window.electron.openDevTool(res.data);
+        }}
       >
         Open Editor
       </button>

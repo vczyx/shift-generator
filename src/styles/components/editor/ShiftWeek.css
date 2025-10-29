@@ -3,23 +3,6 @@
   flex-direction: column;
 }
 
-.editor-shift-week-menuwrapper {
-  display: flex;
-  user-select: none;
-}
-.editor-shift-week-menuitem {
-  padding: 5px 15px;
-  transition: all 0.1s ease-in-out;
-}
-
-.editor-shift-week-menuitem:hover {
-  background-color: #eee;
-}
-
-.editor-shift-week-menuitem:active {
-  background-color: #aaa;
-}
-
 .editor-shift-week-daywrapper {
   display: flex;
   flex: 1;
