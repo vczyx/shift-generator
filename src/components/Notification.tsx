@@ -20,7 +20,10 @@ const Notification = forwardRef<NotificationHandles, NotificationProps>(
     const [visible, setVisible] = useState(false);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     useImperativeHandle(ref, () => ({
-      show: () => setVisible(true),
+      show: () => {
+        setVisible(false);
+        setVisible(true);
+      },
       hide: () => {
         clearTimeout(timerRef.current);
         setVisible(false);
@@ -29,6 +32,7 @@ const Notification = forwardRef<NotificationHandles, NotificationProps>(
 
     useEffect(() => {
       if (visible) {
+        clearTimeout(timerRef.current);
         timerRef.current = setTimeout(() => setVisible(false), time);
         return () => clearTimeout(timerRef.current);
       }

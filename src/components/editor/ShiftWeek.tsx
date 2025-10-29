@@ -68,27 +68,38 @@ const ShiftWeek: React.FC<ShiftWeekProps> = (props) => {
         {
           type: "button",
           caption: "새 파일",
+          shortInfo: "Ctrl+N",
           onClick: props.menuAction.newFile,
         },
-        { type: "button", caption: "열기", onClick: props.menuAction.open },
-        { type: "button", caption: "저장", onClick: props.menuAction.save },
+        {
+          type: "button",
+          caption: "열기",
+          shortInfo: "Ctrl+O",
+          onClick: props.menuAction.open,
+        },
+        {
+          type: "button",
+          caption: "저장",
+          shortInfo: "Ctrl+S",
+          onClick: props.menuAction.save,
+        },
         {
           type: "button",
           caption: "다른 이름으로 저장",
+          shortInfo: "Ctrl+Shift+S",
           onClick: props.menuAction.saveAs,
         },
-        { type: "button", caption: "종료", onClick: props.menuAction.exit },
+        {
+          type: "button",
+          caption: "종료",
+          shortInfo: "Ctrl+W",
+          onClick: props.menuAction.exit,
+        },
       ],
     },
     { display: "편집", items: [{ type: "button", caption: "asd" }] },
     { display: "근무자 추가", onClick: openAddPanel },
-    { display: "Open DevTools", onClick: props.menuAction.openDevTool },
-    {
-      display: "",
-      onClick: () => {
-        window.alert(__dirname);
-      },
-    },
+    { display: "", onClick: props.menuAction.openDevTool },
   ];
 
   const infoRef = useRef<any>(null);

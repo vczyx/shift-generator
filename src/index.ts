@@ -7,6 +7,7 @@ import {
   MessageBoxOptions,
   MessageBoxReturnValue,
   globalShortcut,
+  Menu,
 } from "electron";
 import fs, { constants } from "fs/promises";
 import * as path from "path";
@@ -414,6 +415,7 @@ const openWindow = (
     },
   });
   window.setMenu(null);
+  Menu.setApplicationMenu(null);
   const index = window.id;
   const query = new URLSearchParams({ winid: `${index}` }).toString();
   window.loadURL(`${baseUrl}${view ? `#${view}` : ""}?${query}`);

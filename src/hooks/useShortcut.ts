@@ -1,27 +1,38 @@
 import { useEffect } from "react";
 
-const useShortcut = (keys: string[], callback: () => void) => {
+const useShortcut = (
+  keys: string[],
+  callback: () => void,
+  deps: React.DependencyList = []
+) => {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      const keySet = new Set(keys.map((k) => k.toLowerCase()));
-      const pressed = new Set();
+      const required = new Set(keys.map((k) => k.toLowerCase()));
+      const pressed = new Set<string>();
 
       if (e.ctrlKey) pressed.add("ctrl");
-      if (e.metaKey) pressed.add("meta"); // macOS용
+      if (e.metaKey) pressed.add("meta");
       if (e.shiftKey) pressed.add("shift");
       if (e.altKey) pressed.add("alt");
-      if (e.key) pressed.add(e.key.toLowerCase());
 
-      const match = [...keySet].every((k) => pressed.has(k));
+      const key = e.key.toLowerCase();
+      if (!["control", "meta", "shift", "alt"].includes(key)) {
+        pressed.add(key);
+      }
+
+      const match =
+        required.size === pressed.size &&
+        [...required].every((k) => pressed.has(k));
+
       if (match) {
-        e.preventDefault(); // 기본 동작 방지 (예: 브라우저 저장창)
+        e.preventDefault();
         callback();
       }
     };
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [keys, callback]);
+  }, [keys.join(","), callback, ...deps]);
 };
 
 export default useShortcut;

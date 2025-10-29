@@ -16,6 +16,7 @@ export interface ContextMenuItemData {
   visible?: boolean;
   enabled?: boolean;
   caption?: string;
+  shortInfo?: string;
   onClick?: (e: React.MouseEvent) => void;
   style?: React.CSSProperties;
   child?: ContextMenuItemData[];
@@ -207,7 +208,10 @@ const ContextMenu = forwardRef<ContextMenuHandle, ContextMenuProps>(
                       }
                     }}
                   >
-                    {item.caption}
+                    <p>{item.caption}</p>
+                    {item.shortInfo && (
+                      <p className="contextmenu-shortinfo">{item.shortInfo}</p>
+                    )}
                     {item.child &&
                       childVisible[level + 1] === index &&
                       render(item.child, level + 1)}

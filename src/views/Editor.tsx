@@ -7,6 +7,7 @@ import ShiftSelector from "../components/ShiftSelector";
 import util from "../utils/util";
 import AddressF from "../data/Address";
 import Notification, { NotificationHandles } from "../components/Notification";
+import useShortcut from "../hooks/useShortcut";
 
 interface EditorProps {
   // contextMenu?: RefObject<ContextMenuHandle>;
@@ -124,35 +125,12 @@ const Editor: React.FC<EditorProps> = (props) => {
     })();
   }, [address]);
 
-  useEffect(() => {
-    const handle = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
-    };
-    window.addEventListener("beforeunload", handle);
-    return window.removeEventListener("beforeunload", handle);
-  }, []);
   // SHORT CUT 등록 ====================================
-
-  // Ctrl(Command)+S
-  useEffect(() => {
-    const handle = () => {
-      save(addressRef.current, shiftDataRef.current, true);
-    };
-
-    window.electron.onShortcut("save", handle);
-    return window.electron.clearShortcut("save", handle);
-  }, []);
-
-  // Ctrl(Command)+W
-  useEffect(() => {
-    const handle = () => {
-      exit(shiftDataRef.current);
-    };
-
-    window.electron.onShortcut("close", handle);
-    return window.electron.clearShortcut("close", handle);
-  }, []);
+  useShortcut(["ctrl", "s"], () => menuActions.save());
+  useShortcut(["ctrl", "w"], () => menuActions.exit());
+  useShortcut(["ctrl", "shift", "s"], () => menuActions.saveAs());
+  useShortcut(["ctrl", "n"], () => menuActions.newFile());
+  useShortcut(["ctrl", "o"], () => menuActions.open());
 
   useEffect(() => {
     const handle = () => exit(shiftDataRef.current);
@@ -284,7 +262,7 @@ const Editor: React.FC<EditorProps> = (props) => {
 
   return (
     <>
-      <div className="editorview" ref={divRef}>
+      <div className="editorview" ref={divRef} tabIndex={0}>
         <div className="editorview-title">
           {address &&
             `[ ${address.brand} ] ${address.area} - ${address.restaurant} (${address.date}/${address.shift})`}

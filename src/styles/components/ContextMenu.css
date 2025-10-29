@@ -12,6 +12,7 @@
 .contextmenu-item {
   padding: 5px 15px;
   min-width: 150px;
+  display: flex;
 }
 
 .contextmenu-label {
@@ -34,4 +35,13 @@
   padding: 0px;
   border-bottom: 1px solid black;
   margin: 0px 15px;
+}
+
+.contextmenu-shortinfo {
+  text-align: right;
+  flex: 1;
+  font-size: 12;
+  margin-left: 15px;
+  color: gray;
+  line-height: 2;
 }
