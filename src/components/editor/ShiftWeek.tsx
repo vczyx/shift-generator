@@ -3,6 +3,7 @@ import React, {
   RefObject,
   SetStateAction,
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -17,8 +18,9 @@ import ContextMenu, {
 } from "../ContextMenu";
 import AddWorkerPanel from "./AddWorkerPanel";
 import { days } from "../../utils/util";
-import { currentWorkerId } from "./ShiftWorker";
 import ShiftWorkerInfo, { ShiftWorkerInfoHandles } from "./ShiftWorkerInfo";
+import { useGlobalState } from "../../hooks/useGlobalState";
+import ShiftWorker, { WorkerComponentData } from "./ShiftWorker";
 
 // Props Interface
 interface ShiftWeekProps {
@@ -32,6 +34,9 @@ interface ShiftWeekProps {
 
 export interface ShiftWeekHandles {
   addWorker: () => void;
+  editWorker: (wcd: WorkerComponentData) => void;
+  deleteWorker: (wcd: WorkerComponentData) => void;
+  resetWorkers: (ask: boolean) => void;
 }
 
 const ShiftWeek = forwardRef<ShiftWeekHandles, ShiftWeekProps>((props, ref) => {
@@ -50,7 +55,23 @@ const ShiftWeek = forwardRef<ShiftWeekHandles, ShiftWeekProps>((props, ref) => {
   const [maxHeight, setMaxHeight] = useState(0);
   const [addPanelVisible, setAddPanelVisible] = useState(false);
   const [addPanelSelectedWd, setAddPanelSelectedWd] = useState<WeekDays>("mon");
-  const dayRefs = useRef<(ShiftDayHandle | null)[]>([]);
+
+  const [curWId, _] = useGlobalState(ShiftWorker, "curWId", -1);
+  const [globalEditing, setGlobalEditing] = useGlobalState<WorkerComponentData>(
+    ShiftWorker,
+    "globalEditing",
+    null
+  );
+
+  const dayRefs = useRef<Record<WeekDays, ShiftDayHandle | null>>({
+    mon: null,
+    tue: null,
+    fri: null,
+    sat: null,
+    sun: null,
+    thu: null,
+    wed: null,
+  });
   const menuRef = useRef<ContextMenuHandle | null>(null);
 
   const openAddPanel = (wd?: WeekDays) => {
@@ -58,8 +79,41 @@ const ShiftWeek = forwardRef<ShiftWeekHandles, ShiftWeekProps>((props, ref) => {
     setAddPanelVisible(true);
   };
 
+  const getWorkerComponent = useCallback((wcd: WorkerComponentData) => {
+    if (!dayRefs.current) return null;
+    if (!wcd) return null;
+    return dayRefs.current[wcd.weekday]
+      .getWorkerCompRefs()
+      .current.find((comp) => comp.getWorkerId() === wcd.workerId);
+  }, []);
+
   useImperativeHandle(ref, () => ({
     addWorker: () => openAddPanel(),
+    editWorker: (wcd) => {
+      setGlobalEditing(wcd);
+    },
+    deleteWorker: (wcd) => {
+      getWorkerComponent(wcd)?.remove();
+    },
+    resetWorkers: async (ask: boolean) => {
+      if (ask) {
+        const askRes = await window.electron.showMsgBox(
+          {
+            type: "question",
+            title: "근무자 초기화",
+            message: `근무자를 전부 삭제하시겠습니까?`,
+            buttons: ["취소", "삭제"],
+          },
+          props.winId
+        );
+
+        if (!askRes.success || askRes.data.response === 0) return;
+      }
+      Object.values(dayRefs.current).forEach((dr) =>
+        dr.resetWorkers(false, false)
+      );
+      props.showNoti(`근무자를 초기화 하였습니다.`);
+    },
   }));
 
   const infoRef = useRef<ShiftWorkerInfoHandles | null>(null);
@@ -97,7 +151,7 @@ const ShiftWeek = forwardRef<ShiftWeekHandles, ShiftWeekProps>((props, ref) => {
 
   const handleOnScroll = (e: React.WheelEvent<HTMLDivElement>) => {
     const max = Math.max(
-      ...dayRefs.current.map(
+      ...Object.values(dayRefs.current).map(
         (el) =>
           el.workerRef.current.scrollHeight - el.workerRef.current.clientHeight
       )
@@ -123,7 +177,7 @@ const ShiftWeek = forwardRef<ShiftWeekHandles, ShiftWeekProps>((props, ref) => {
               contextMenu={props.contextMenu}
               scrollTop={scrollTop}
               ref={(el) => {
-                dayRefs.current[index] = el;
+                dayRefs.current[wd] = el;
               }}
               maxHeight={maxHeight}
               infoRef={infoRef}
@@ -148,7 +202,6 @@ const ShiftWeek = forwardRef<ShiftWeekHandles, ShiftWeekProps>((props, ref) => {
       />
       <ShiftWorkerInfo
         ref={infoRef}
-        getWId={() => currentWorkerId}
         setShiftData={props.setShiftData}
         shiftInfo={props.shiftInfo}
       />

@@ -1,4 +1,4 @@
-import ShiftWeek from "../components/editor/ShiftWeek";
+import ShiftWeek, { ShiftWeekHandles } from "../components/editor/ShiftWeek";
 import "../styles/Editor.css";
 import ContextMenu, {
   ContextMenuHandle,
@@ -11,6 +11,10 @@ import util from "../utils/util";
 import AddressF from "../data/Address";
 import Notification, { NotificationHandles } from "../components/Notification";
 import useShortcut from "../hooks/useShortcut";
+import { useGlobalState } from "../hooks/useGlobalState";
+import ShiftWorker, {
+  WorkerComponentData,
+} from "../components/editor/ShiftWorker";
 
 interface EditorProps {
   // contextMenu?: RefObject<ContextMenuHandle>;
@@ -39,10 +43,17 @@ const Editor: React.FC<EditorProps> = (props) => {
   }>();
   const [notiMsg, setNotiMsg] = useState("");
 
+  const [selected, setSelected] = useGlobalState<WorkerComponentData>(
+    ShiftWorker,
+    "selected",
+    null
+  );
+
   const notiRef = useRef<NotificationHandles | null>(null);
   const divRef = useRef<HTMLDivElement>(null);
   const shiftDataRef = useRef<Shift>(shiftData);
   const addressRef = useRef<Address>(address);
+  const shiftWeekRef = useRef<ShiftWeekHandles | null>(null);
 
   const display = useMemo(
     () => ({
@@ -238,6 +249,12 @@ const Editor: React.FC<EditorProps> = (props) => {
   useShortcut(["ctrl", "shift", "s"], () => menuActions.file.saveAs());
   useShortcut(["ctrl", "n"], () => menuActions.file.newFile());
   useShortcut(["ctrl", "o"], () => menuActions.file.open());
+  useShortcut(["delete"], () => menuActions.edit.delete());
+  useShortcut(["f2"], () => menuActions.edit.edit());
+  useShortcut(["ctrl", "g"], () => menuActions.edit.addWorker());
+  useShortcut(["ctrl", "shift", "delete"], () =>
+    menuActions.edit.resetWorkers()
+  );
 
   // Menu Item 구성 =====================================
   const menus = useMemo<
@@ -288,17 +305,25 @@ const Editor: React.FC<EditorProps> = (props) => {
         items: [
           {
             type: "button",
-            caption: "근무자 추가",
-            shortInfo: "Ctrl+G",
-            onClick: () => menuActions.edit.addWorker(),
+            caption: "수정",
+            enabled: selected !== null,
+            shortInfo: "F2",
+            onClick: () => menuActions.edit.edit(),
           },
           {
             type: "button",
             caption: "삭제",
-            shortInfo: "Ctrl+D",
-            onClick: () => menuActions.edit.resetWorkers(),
+            enabled: selected !== null,
+            shortInfo: "Del",
+            onClick: () => menuActions.edit.delete(),
           },
           { type: "bar" },
+          {
+            type: "button",
+            caption: "근무자 추가",
+            shortInfo: "Ctrl+G",
+            onClick: () => menuActions.edit.addWorker(),
+          },
           {
             type: "button",
             caption: "초기화",
@@ -310,7 +335,7 @@ const Editor: React.FC<EditorProps> = (props) => {
       { display: "근무자 추가", onClick: () => menuActions.edit.addWorker() },
       { display: "", onClick: () => menuActions.debug.openDevTool() },
     ],
-    []
+    [selected]
   );
 
   // Menu Action 구성 ==========================================
@@ -339,8 +364,10 @@ const Editor: React.FC<EditorProps> = (props) => {
         },
       },
       edit: {
-        addWorker: async () => {},
-        resetWorkers: async () => {},
+        addWorker: async () => shiftWeekRef.current?.addWorker(),
+        resetWorkers: async () => shiftWeekRef.current?.resetWorkers(true),
+        delete: async () => shiftWeekRef.current?.deleteWorker(selected),
+        edit: async () => shiftWeekRef.current?.editWorker(selected),
       },
       debug: {
         openDevTool: async () => {
@@ -348,12 +375,12 @@ const Editor: React.FC<EditorProps> = (props) => {
         },
       },
     }),
-    [address, shiftData, shiftSelector]
+    [address, shiftData, shiftSelector, selected]
   );
 
   return (
     <>
-      <div className="editorview" ref={divRef} tabIndex={0}>
+      <div className="editorview" ref={divRef}>
         <div className="editorview-title">
           {address &&
             `[ ${address.brand} ] ${address.area} - ${address.restaurant} (${address.date}/${address.shift})`}
@@ -386,6 +413,7 @@ const Editor: React.FC<EditorProps> = (props) => {
             setShiftData={setShiftData}
             winId={getWinId()}
             showNoti={showNoti}
+            ref={shiftWeekRef}
           />
         )}
       </div>

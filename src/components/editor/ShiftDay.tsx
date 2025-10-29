@@ -68,7 +68,8 @@ export interface ShiftDayProps {
 export interface ShiftDayHandle {
   refresh: () => void;
   workerRef: RefObject<HTMLDivElement>;
-  resetWorkers: (ask: boolean) => void;
+  resetWorkers: (ask: boolean, noti?: boolean) => void;
+  getWorkerCompRefs: () => RefObject<(ShiftWorkerHandles | null)[]>;
 }
 
 const weekDayDateAdd: Record<WeekDays, number> = {
@@ -135,9 +136,10 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
       resetWorkers: (ask: boolean) => {
         resetWorkers(ask);
       },
+      getWorkerCompRefs: () => workerCompRefs,
     };
 
-    useImperativeHandle(ref, () => handlers);
+    useImperativeHandle(ref, () => handlers, [dayData.workers, workerCompRefs]);
 
     /**
      * Handle
@@ -353,7 +355,7 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
       setWorkers(dayData.workers);
     };
 
-    const resetWorkers = useCallback(async (ask: boolean) => {
+    const resetWorkers = useCallback(async (ask: boolean, noti?: boolean) => {
       if (ask) {
         const askRes = await window.electron.showMsgBox(
           {
@@ -368,7 +370,8 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
         if (!askRes.success || askRes.data.response === 0) return;
       }
       workerCompRefs.current?.forEach((comp) => comp.remove());
-      showNoti(`${weekDayKor[weekDay]}요일 근무자를 초기화 하였습니다.`);
+      if (noti ?? true)
+        showNoti(`${weekDayKor[weekDay]}요일 근무자를 초기화 하였습니다.`);
     }, []);
 
     /**

@@ -15,6 +15,7 @@ import "../../styles/components/editor/ShiftWorker";
 import { ContextMenuHandle, ContextMenuItemData } from "../ContextMenu";
 import { ShiftWorkerInfoHandles } from "./ShiftWorkerInfo";
 import { weekDayKor } from "../../utils/util";
+import { useGlobalState } from "../../hooks/useGlobalState";
 
 /**
  * Worker Component Props 설정
@@ -33,17 +34,14 @@ export interface ShiftWorkerProps {
 
 export interface ShiftWorkerHandles {
   remove: () => void;
+  getWorkerId: () => number;
+  getWeekday: () => WeekDays;
 }
 
-export let currentWorkerId: number = -1;
-export function setCurrentWorkerId(id: number) {
-  currentWorkerId = id;
-}
-export let globalEditing: {
-  day: WeekDays;
+export type WorkerComponentData = {
+  weekday: WeekDays;
   workerId: number;
-} | null = null;
-export const onChangedGlobalEditing = new CustomEvent("onChangedGlobalEditing");
+} | null;
 
 const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
   (
@@ -80,6 +78,22 @@ const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
     const [beforePartTime, setBeforePartTime] = useState(partTime);
     const [endTime, setEndTime] = useState(partTime.end);
     const [zeroAnim, setZeroAnim] = useState(true);
+
+    const [selected, setSelected] = useGlobalState<WorkerComponentData>(
+      ShiftWorker,
+      "selected",
+      null
+    );
+
+    const [curWId, setCurWId] = useGlobalState(ShiftWorker, "curWId", -1);
+    const [globalEditing, setGlobalEditing] =
+      useGlobalState<WorkerComponentData>(ShiftWorker, "globalEditing", null);
+    // const [curWId, setCurWId] = useGlobalState<WorkerComponentData>(
+    //   ShiftWorker,
+    //   "curWId",
+    //   null
+    // );
+
     const getWorkingTime = () => {
       return (
         Math.round(
@@ -89,9 +103,15 @@ const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
       );
     };
 
-    useImperativeHandle(ref, () => ({
-      remove: () => handleRemove(),
-    }));
+    useImperativeHandle(
+      ref,
+      () => ({
+        remove: () => handleRemove(),
+        getWorkerId: () => workerId,
+        getWeekday: () => day,
+      }),
+      [workerId, day]
+    );
 
     const setError = (msg: string, panel: boolean) => {
       setErrorMsg(msg);
@@ -113,7 +133,7 @@ const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
     const end = String(Math.floor(endTime)).padStart(2, "0");
     const endHalf = endTime - Math.floor(endTime);
 
-    const modifyErrorMsg = () => {
+    const modifyErrorMsg = useCallback(() => {
       // 오류 메시지 출력
 
       const totalWorkingTime = ShiftF.getTotalWorkingTime(shiftInfo, workerId);
@@ -132,31 +152,7 @@ const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
         setError(`일 ${roleData.maxWorkingTime}시간 초과`, false);
       // 오류 제거
       else setError("", false);
-    };
-
-    /**
-   * Effect
-   *
-   * 조건 : PartTime 값이 수정되었을 때
-   * 실행 : WorkingTime의 값을 수정 함
-   *
-  // useEffect(() => {
-  //   setWorkingTime(
-  //     Math.round(
-  //       PartTimeF.getWorkTime({ start: startTime, end: endTime }) * 10
-  //     ) / 10
-  //   );
-  //   currentShiftData.week.days[day].workers[workerId] = {
-  //     start: startTime,
-  //     end: endTime,
-  //   };
-  //   modifyShiftData();
-  // }, [startTime, endTime]);
-  */
-
-    const handleOnModifiedShiftData = () => {
-      modifyErrorMsg();
-    };
+    }, [shiftInfo, day, workerId]);
 
     /**
      * Effect
@@ -173,8 +169,7 @@ const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
         inputRefs[0].current.focus();
 
         // 현재 수정 중인 컴포넌트의 정보를 저장 / 수정됨 이벤트 실행
-        globalEditing = { day, workerId };
-        window.dispatchEvent(onChangedGlobalEditing);
+        setGlobalEditing({ weekday: day, workerId });
       } else {
         // 0 이상 48 이하로 값 조정
         setStartTime((p) => Math.min(Math.max(0, p), 48));
@@ -189,19 +184,11 @@ const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
           end: endTime,
         };
         setShiftData(x);
+        setGlobalEditing(null);
       }
 
       modifyErrorMsg();
     }, [isEditing]);
-
-    useEffect(() => {
-      window.addEventListener("modifiedShiftData", handleOnModifiedShiftData);
-      return () =>
-        window.removeEventListener(
-          "modifiedShiftData",
-          handleOnModifiedShiftData
-        );
-    }, []);
 
     /**
      * Effect
@@ -210,16 +197,20 @@ const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
      * 실행 : 방금 수정 중인 컴포넌트가 이 컴포넌트가 아니라면 수정 모드를 해제
      */
     useEffect(() => {
-      const handler = () => {
-        if (globalEditing === null) return;
+      if (globalEditing === null) return;
 
-        if (day !== globalEditing.day || workerId !== globalEditing.workerId)
-          setIsEditing(false);
-      };
-      window.addEventListener("onChangedGlobalEditing", handler);
+      if (day !== globalEditing.weekday || workerId !== globalEditing.workerId)
+        setIsEditing(false);
+      else if (
+        !isEditing &&
+        day === globalEditing.weekday &&
+        workerId === globalEditing.workerId
+      )
+        setIsEditing(true);
+    }, [globalEditing]);
+
+    useEffect(() => {
       setZeroAnim(false);
-      return () =>
-        window.removeEventListener("onChangedGlobalEditing", handler);
     }, []);
 
     /**
@@ -256,6 +247,12 @@ const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
     };
 
     const handleRemove = () => {
+      if (
+        selected &&
+        selected.weekday === day &&
+        selected.workerId === workerId
+      )
+        setSelected(null);
       setZeroAnim(true);
       setTimeout(() => {
         setZeroAnim(false);
@@ -339,9 +336,15 @@ const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
 
     const handleOnBlur = () => {
       setTimeout(() => {
-        if (isBlur.current) setIsEditing(false);
+        if (isBlur.current) {
+          setIsEditing(false);
+        }
         isBlur.current = true;
       }, 0);
+    };
+
+    const handleOnClick = () => {
+      setSelected({ weekday: day, workerId });
     };
 
     // RENDERING
@@ -351,6 +354,7 @@ const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
         <div
           className="editor-shift-worker"
           onDoubleClick={handleDoubleClick}
+          onClick={handleOnClick}
           onContextMenu={handleOnContextMenu}
           onBlur={handleOnBlur}
           style={{
@@ -360,20 +364,24 @@ const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
               : isEditing || errorMsg.length > 0
                 ? "90px"
                 : "70px",
-            borderColor: isEditing
-              ? "blue"
-              : errorMsg.length > 0
-                ? "red"
-                : roleData.displayColor2,
+            borderColor:
+              isEditing ||
+              (selected &&
+                selected.weekday === day &&
+                selected.workerId === workerId)
+                ? "blue"
+                : errorMsg.length > 0
+                  ? "red"
+                  : roleData.displayColor2,
           }}
           // title="더블클릭 하여 수정\n"
           onMouseEnter={(e) => {
             infoRef.current?.handleMouseEnter(e);
-            currentWorkerId = workerId;
+            setCurWId(workerId);
           }}
           onMouseLeave={(e) => {
             infoRef.current?.handleMouseLeave(e);
-            currentWorkerId = -1;
+            setCurWId(-1);
           }}
           // onMouseMove={(e) => {
           //   infoRef.current?.handleMouseMove(e);

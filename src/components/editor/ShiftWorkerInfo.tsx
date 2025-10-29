@@ -2,19 +2,20 @@ import React, {
   forwardRef,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from "react";
 import "../../styles/components/editor/ShiftWorkerInfo.css";
 import ShiftF from "../../data/ShiftF";
 import { format } from "date-fns";
-import { currentWorkerId } from "./ShiftWorker";
 import { weekDayKor } from "../../utils/util";
 import { currentConfig } from "../../data/Config";
+import { useGlobalState } from "../../hooks/useGlobalState";
+import ShiftWorker from "./ShiftWorker";
 
 // Props Interface
 interface ShiftWorkerInfoProps {
-  getWId: () => number;
   shiftInfo: ShiftInformation;
   setShiftData: (data: Shift) => void;
 }
@@ -29,10 +30,6 @@ const ShiftWorkerInfo = forwardRef<
   ShiftWorkerInfoHandles,
   ShiftWorkerInfoProps
 >((props, ref) => {
-  // 기본 값
-  const worker = ShiftF.getWorker(props.shiftInfo, props.getWId());
-  const roleData = worker ? ShiftF.getRoleData(props.shiftInfo, worker) : null;
-
   // Ref 설정
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -40,6 +37,17 @@ const ShiftWorkerInfo = forwardRef<
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [show, setShow] = useState(false);
   const mouseCheck = useRef<boolean>(false);
+  const [curWId, _] = useGlobalState(ShiftWorker, "curWId", -1);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+
+  const worker = useMemo(
+    () => ShiftF.getWorker(props.shiftInfo, curWId),
+    [props.shiftInfo, curWId]
+  );
+  const roleData = useMemo(
+    () => (worker ? ShiftF.getRoleData(props.shiftInfo, worker) : null),
+    [worker, props.shiftInfo]
+  );
 
   // forwardRef Handlers
   const handlers = {
@@ -57,36 +65,39 @@ const ShiftWorkerInfo = forwardRef<
     },
     handleMouseMove: (e: MouseEvent) => {
       if (!mouseCheck.current) return;
-      // const tooltipWidth = 200; // 예상 툴팁 너비
-      // const tooltipHeight = 200; // 예상 툴팁 높이
+      const tooltipWidth = tooltipRef.current?.offsetWidth ?? 250;
+      const tooltipHeight = tooltipRef.current?.offsetHeight ?? 400;
       const padding = 10;
 
       let x = e.clientX + padding;
       let y = e.clientY + padding;
 
-      // // 화면 너비/높이 가져오기
-      // const screenWidth = window.innerWidth;
-      // const screenHeight = window.innerHeight;
+      // 화면 너비/높이 가져오기
+      const screenWidth = window.innerWidth;
+      const screenHeight = window.innerHeight;
 
-      // // 오른쪽으로 벗어날 경우 왼쪽으로 위치 조정
-      // if (x + tooltipWidth > screenWidth) {
-      //   x = e.clientX - tooltipWidth - padding;
-      // }
+      // 오른쪽으로 벗어날 경우 왼쪽으로 위치 조정
+      if (x + tooltipWidth > screenWidth) {
+        x = e.clientX - tooltipWidth - padding;
+      }
 
-      // // 아래쪽으로 벗어날 경우 위쪽으로 위치 조정
-      // if (y + tooltipHeight > screenHeight) {
-      //   y = e.clientY - tooltipHeight - padding;
-      // }
+      // 아래쪽으로 벗어날 경우 위쪽으로 위치 조정
+      if (y + tooltipHeight > screenHeight) {
+        y = e.clientY - tooltipHeight - padding;
+      }
 
-      // // 왼쪽으로 벗어날 경우 오른쪽으로 위치 조정
-      // if (x < 0) {
-      //   x = padding;
-      // }
+      // 왼쪽으로 벗어날 경우 오른쪽으로 위치 조정
+      if (x < 0) {
+        x = padding;
+      }
 
-      // // 위쪽으로 벗어날 경우 아래쪽으로 위치 조정
-      // if (y < 0) {
-      //   y = padding;
-      // }
+      // 위쪽으로 벗어날 경우 아래쪽으로 위치 조정
+      if (y < 0) {
+        y = padding;
+      }
+
+      x = Math.max(x, padding);
+      y = Math.max(y, padding);
 
       setPosition({ x, y });
     },
@@ -109,6 +120,7 @@ const ShiftWorkerInfo = forwardRef<
         top: position.y,
         left: position.x,
       }}
+      ref={tooltipRef}
     >
       {worker && (
         <div className="editor-shift-workerinfo-contentbox">
@@ -178,27 +190,22 @@ const ShiftWorkerInfo = forwardRef<
               </tr>
               <tr>
                 <th>현재 주 근로</th>
-                <td>
-                  {ShiftF.getTotalWorkingTime(props.shiftInfo, currentWorkerId)}
-                  h
-                </td>
+                <td>{ShiftF.getTotalWorkingTime(props.shiftInfo, curWId)}h</td>
               </tr>
               <tr>
                 <th>근무 요일</th>
                 <td>
-                  {ShiftF.getWorkWeekdays(props.shiftInfo, currentWorkerId).map(
-                    (wd) => (
-                      <p
-                        className="editor-shift-workerinfo-wdcard"
-                        key={wd}
-                        style={{
-                          background: props.shiftInfo.shift.week.days[wd].color,
-                        }}
-                      >
-                        {weekDayKor[wd]}
-                      </p>
-                    )
-                  )}
+                  {ShiftF.getWorkWeekdays(props.shiftInfo, curWId).map((wd) => (
+                    <p
+                      className="editor-shift-workerinfo-wdcard"
+                      key={wd}
+                      style={{
+                        background: props.shiftInfo.shift.week.days[wd].color,
+                      }}
+                    >
+                      {weekDayKor[wd]}
+                    </p>
+                  ))}
                 </td>
               </tr>
             </tbody>

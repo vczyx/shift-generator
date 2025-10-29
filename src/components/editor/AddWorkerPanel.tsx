@@ -8,14 +8,15 @@ import React, {
 import "../../styles/components/editor/AddWorkerPanel.css";
 import { days, weekDayKor } from "../../utils/util";
 import ShiftF from "../../data/ShiftF";
-import { setCurrentWorkerId } from "./ShiftWorker";
 import { ShiftDayHandle } from "./ShiftDay";
+import { useGlobalState } from "../../hooks/useGlobalState";
+import ShiftWorker from "./ShiftWorker";
 
 interface AddWorkerPanelProps {
   visible: boolean;
   onExit: () => void;
   infoRef: RefObject<any>;
-  dayRefs: RefObject<(ShiftDayHandle | null)[]>;
+  dayRefs: RefObject<Record<WeekDays, ShiftDayHandle | null>>;
   selectedWdState: [WeekDays, React.Dispatch<React.SetStateAction<WeekDays>>];
   shiftInfo: ShiftInformation;
   setShiftData: (data: Shift) => void;
@@ -39,6 +40,7 @@ const AddWorkerPanel = forwardRef<AddWorkerPanelHandle, AddWorkerPanelProps>(
     ref
   ) => {
     const [selectedWd, setSelectedWd] = selectedWdState;
+    const [curWId, setCurWId] = useGlobalState(ShiftWorker, "curWId");
     const [, forceLoad] = useReducer((e) => e + 1, 0);
     useImperativeHandle(ref, () => ({
       forceLoad: forceLoad,
@@ -90,18 +92,18 @@ const AddWorkerPanel = forwardRef<AddWorkerPanelHandle, AddWorkerPanelProps>(
                   }}
                   onMouseEnter={(e) => {
                     infoRef.current?.handleMouseEnter(e);
-                    setCurrentWorkerId(parseInt(wId));
+                    setCurWId(parseInt(wId));
                   }}
                   onMouseLeave={(e) => {
                     infoRef.current?.handleMouseLeave(e);
-                    setCurrentWorkerId(-1);
+                    setCurWId(-1);
                   }}
                   onClick={() => {
                     if (!enabled) return;
                     setShiftData(
                       ShiftF.addWorker(shiftInfo, selectedWd, parseInt(wId))
                     );
-                    dayRefs.current[days.indexOf(selectedWd)].refresh();
+                    // dayRefs.current[days.indexOf(selectedWd)].refresh();
                     forceLoad();
                     onExit();
                   }}
