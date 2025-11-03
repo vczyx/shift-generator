@@ -58,7 +58,6 @@ export function useGlobalState<T>(
     // 구독자 알림
     const keyMap = subscribersMap.get(component)!;
     keyMap.get(key)?.forEach((fn) => fn(next));
-    console.log(component, key, next);
   };
 
   return [state, dispatch];

@@ -219,7 +219,8 @@ const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
      * 조건 : 요소를 더블클릭 했을 때
      * 실행 : 수정 모드를 변경 (toggle)
      */
-    const handleDoubleClick = () => {
+    const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+      e.stopPropagation();
       setIsEditing((p) => !p);
     };
 

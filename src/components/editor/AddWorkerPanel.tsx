@@ -22,9 +22,7 @@ interface AddWorkerPanelProps {
   setShiftData: (data: Shift) => void;
 }
 
-interface AddWorkerPanelHandle {
-  forceLoad: () => void;
-}
+interface AddWorkerPanelHandle {}
 
 const AddWorkerPanel = forwardRef<AddWorkerPanelHandle, AddWorkerPanelProps>(
   (
@@ -41,10 +39,6 @@ const AddWorkerPanel = forwardRef<AddWorkerPanelHandle, AddWorkerPanelProps>(
   ) => {
     const [selectedWd, setSelectedWd] = selectedWdState;
     const [curWId, setCurWId] = useGlobalState(ShiftWorker, "curWId");
-    const [, forceLoad] = useReducer((e) => e + 1, 0);
-    useImperativeHandle(ref, () => ({
-      forceLoad: forceLoad,
-    }));
 
     return (
       <div
@@ -104,7 +98,6 @@ const AddWorkerPanel = forwardRef<AddWorkerPanelHandle, AddWorkerPanelProps>(
                       ShiftF.addWorker(shiftInfo, selectedWd, parseInt(wId))
                     );
                     // dayRefs.current[days.indexOf(selectedWd)].refresh();
-                    forceLoad();
                     onExit();
                   }}
                 >

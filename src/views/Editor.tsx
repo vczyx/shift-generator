@@ -15,6 +15,9 @@ import { useGlobalState } from "../hooks/useGlobalState";
 import ShiftWorker, {
   WorkerComponentData,
 } from "../components/editor/ShiftWorker";
+import WorkerSettingPanel, {
+  WorkerSettingPanelHandles,
+} from "../components/editor/WorkerSettingPanel";
 
 interface EditorProps {
   // contextMenu?: RefObject<ContextMenuHandle>;
@@ -54,6 +57,7 @@ const Editor: React.FC<EditorProps> = (props) => {
   const shiftDataRef = useRef<Shift>(shiftData);
   const addressRef = useRef<Address>(address);
   const shiftWeekRef = useRef<ShiftWeekHandles | null>(null);
+  const workerSetPnlRef = useRef<WorkerSettingPanelHandles | null>(null);
 
   const display = useMemo(
     () => ({
@@ -249,12 +253,16 @@ const Editor: React.FC<EditorProps> = (props) => {
   useShortcut(["ctrl", "shift", "s"], () => menuActions.file.saveAs());
   useShortcut(["ctrl", "n"], () => menuActions.file.newFile());
   useShortcut(["ctrl", "o"], () => menuActions.file.open());
+
   useShortcut(["delete"], () => menuActions.edit.delete());
   useShortcut(["f2"], () => menuActions.edit.edit());
   useShortcut(["ctrl", "g"], () => menuActions.edit.addWorker());
   useShortcut(["ctrl", "shift", "delete"], () =>
     menuActions.edit.resetWorkers()
   );
+
+  useShortcut(["F9"], () => menuActions.settings.workerSetting());
+  useShortcut(["F10"], () => menuActions.settings.brandSetting());
 
   // Menu Item 구성 =====================================
   const menus = useMemo<
@@ -333,6 +341,23 @@ const Editor: React.FC<EditorProps> = (props) => {
         ],
       },
       { display: "근무자 추가", onClick: () => menuActions.edit.addWorker() },
+      {
+        display: "정보 설정",
+        items: [
+          {
+            type: "button",
+            caption: "근무자 정보 설정",
+            shortInfo: "F9",
+            onClick: () => menuActions.settings.workerSetting(),
+          },
+          {
+            type: "button",
+            caption: "브랜드 정보 설정",
+            shortInfo: "F10",
+            onClick: () => menuActions.settings.brandSetting(),
+          },
+        ],
+      },
       { display: "", onClick: () => menuActions.debug.openDevTool() },
     ],
     [selected]
@@ -368,6 +393,13 @@ const Editor: React.FC<EditorProps> = (props) => {
         resetWorkers: async () => shiftWeekRef.current?.resetWorkers(true),
         delete: async () => shiftWeekRef.current?.deleteWorker(selected),
         edit: async () => shiftWeekRef.current?.editWorker(selected),
+      },
+      settings: {
+        workerSetting: async () => {
+          if (!workerSetPnlRef.current) return;
+          workerSetPnlRef.current?.setVisible(true);
+        },
+        brandSetting: async () => {},
       },
       debug: {
         openDevTool: async () => {
@@ -439,6 +471,7 @@ const Editor: React.FC<EditorProps> = (props) => {
           display={display[mode]}
         />
       )}
+      <WorkerSettingPanel ref={workerSetPnlRef} defaultAddress={address} />
       <ContextMenu enabled ref={contextMenuRef} />
       <Notification ref={notiRef} message={notiMsg} time={1000} />
     </>

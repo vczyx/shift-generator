@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld("electron", {
   openEditor: (adr: Address) => ipcRenderer.invoke("open-editor", adr),
   getDataInfo: () => ipcRenderer.invoke("get-data-info"),
   getShift: (adr: Address) => ipcRenderer.invoke("get-shift", adr),
+  getWorkers: (adr: Address) => ipcRenderer.invoke("get-workers", adr),
   getBrandConfig: (brand: string) =>
     ipcRenderer.invoke("get-brand-config", brand),
   getDirectoryInfo: (path: string) =>

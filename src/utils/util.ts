@@ -121,4 +121,10 @@ export const weekDayKor: Record<WeekDays, string> = {
   sun: "일",
 };
 
+export const areDepsEqual = (prev?: any[], next?: any[]) => {
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+  return prev.every((v, i) => Object.is(v, next[i]));
+};
+
 export default util;

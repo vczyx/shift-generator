@@ -431,6 +431,7 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
             width: detail && visible ? "1260px" : visible ? "180px" : "0px",
           }}
           onContextMenu={(e) => handleOnContextMenu(e)}
+          onDoubleClick={(e) => openAddPanel(weekDay)}
         >
           <div
             className="editor-shift-day-header"

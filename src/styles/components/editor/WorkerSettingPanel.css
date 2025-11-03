@@ -1,0 +1,66 @@
+.workersetpnl {
+  display: flex;
+  flex-direction: column;
+}
+
+.workersetpnl-header {
+  margin: 5px 0px;
+  border: none;
+}
+
+.workersetpnl-combobox {
+  outline: none;
+  border: 1px solid black;
+  padding: 5px;
+
+  width: 100px;
+}
+
+.workersetpnl-header-label > td {
+  font-weight: bold;
+  font-size: 12;
+  text-align: center;
+}
+
+.workersetpnl-contentwrapper {
+  display: flex;
+  flex-direction: row;
+  width: 600px;
+  height: 400px;
+}
+
+.workersetpnl-workerlistwrapper {
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+}
+
+.workersetpnl-workerlisttoolstrip {
+  display: flex;
+  align-self: start;
+}
+.workersetpnl-workerlistwrapper > ul {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid black;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  flex: 1;
+}
+
+.workersetpnl-workerlistwrapper > ul > li {
+  text-align: left;
+  padding: 2px 10px;
+  transition: all 0.02s ease-in-out;
+}
+
+.workersetpnl-selecteditem {
+  background-color: #92d3ff !important;
+  font-weight: bold;
+}
+
+.workersetpnl-workerdataset {
+  border: 1px solid black;
+  flex: 1;
+  border-left: none;
+}

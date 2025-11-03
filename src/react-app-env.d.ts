@@ -13,6 +13,9 @@ interface Window {
     openEditor: (adr: Address) => Promise<IpcResponse<number>>;
     getDataInfo: () => Promise<IpcResponse<GetDataInfoResponse>>;
     getShift: (adr: Address) => Promise<IpcResponse<Shift>>;
+    getWorkers: (
+      adr: Address
+    ) => Promise<IpcResponse<{ [workerId: number]: WorkerInfo }>>;
     getBrandConfig: (brand: string) => Promise<IpcResponse<BrandConfig>>;
     getDirectoryInfo: (path: string) => Promise<IpcResponse<DirectoryInfo>>;
     showMsgBox: (
