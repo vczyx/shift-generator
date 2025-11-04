@@ -62,8 +62,10 @@ const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
     error = error ?? "";
     const curDay = shiftInfo.shift.week.days[day];
     const curWorker = ShiftF.getWorker(shiftInfo, workerId);
-    const name = curWorker.name;
-    const roleData = ShiftF.getRoleData(shiftInfo, curWorker);
+    const name = curWorker?.name ?? "삭제됨";
+    const roleData = curWorker
+      ? ShiftF.getRoleData(shiftInfo, curWorker)
+      : null;
     const partTime = curDay.workers[workerId] ?? { start: 0, end: 0 };
 
     // 색 설정
@@ -134,6 +136,10 @@ const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
     const endHalf = endTime - Math.floor(endTime);
 
     const modifyErrorMsg = useCallback(() => {
+      if (!curWorker) {
+        setError("삭제된 근무자", true);
+        return;
+      }
       // 오류 메시지 출력
 
       const totalWorkingTime = ShiftF.getTotalWorkingTime(shiftInfo, workerId);
@@ -268,7 +274,7 @@ const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
         });
         if (infoRef.current) infoRef.current?.handleMouseLeave(null);
       }, 100);
-      showNoti(`${weekDayKor[day]}요일 ${curWorker.name}(이)가 삭제되었습니다`);
+      showNoti(`${weekDayKor[day]}요일 ${name}(이)가 삭제되었습니다`);
     };
 
     /**
@@ -311,14 +317,13 @@ const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
     };
 
     const handleOnContextMenu = (e: React.MouseEvent) => {
-      console.log(curWorker.name, getWorkingTime());
       contextMenu.current?.open(
         [
           ...contextMenuItems,
           { type: "bar" },
           {
             type: "label",
-            caption: curWorker.name,
+            caption: curWorker?.name,
           },
           {
             type: "button",
@@ -373,14 +378,18 @@ const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
                 ? "blue"
                 : errorMsg.length > 0
                   ? "red"
-                  : roleData.displayColor2,
+                  : roleData
+                    ? roleData.displayColor2
+                    : "gray",
           }}
           // title="더블클릭 하여 수정\n"
           onMouseEnter={(e) => {
+            if (!curWorker) return;
             infoRef.current?.handleMouseEnter(e);
             setCurWId(workerId);
           }}
           onMouseLeave={(e) => {
+            if (!curWorker) return;
             infoRef.current?.handleMouseLeave(e);
             setCurWId(-1);
           }}
@@ -400,9 +409,9 @@ const ShiftWorker = forwardRef<ShiftWorkerHandles, ShiftWorkerProps>(
           ></div>
           <div className="editor-shift-worker-infowrapper">
             <div className="editor-shift-worker-name">{name}</div>
-            <div className="editor-shift-worker-role">{roleData.nickname}</div>
+            <div className="editor-shift-worker-role">{roleData?.nickname}</div>
             <div className="editor-shift-worker-pos">
-              {curWorker.position.map((x) => (
+              {curWorker?.position.map((x) => (
                 <p className="editor-shift-worker-poscard" key={x}>
                   {x}
                 </p>

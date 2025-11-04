@@ -127,4 +127,14 @@ export const areDepsEqual = (prev?: any[], next?: any[]) => {
   return prev.every((v, i) => Object.is(v, next[i]));
 };
 
+export const generateNumericId = (noexists?: number[]): number => {
+  const timestamp = Date.now();
+  let random: number;
+  const getRes = () => Number(`${timestamp}${random}`);
+  do {
+    random = Math.floor(Math.random() * 1000);
+  } while (noexists ? noexists.includes(getRes()) : false);
+  return getRes();
+};
+
 export default util;

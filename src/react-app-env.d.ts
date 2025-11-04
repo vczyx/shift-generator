@@ -16,6 +16,10 @@ interface Window {
     getWorkers: (
       adr: Address
     ) => Promise<IpcResponse<{ [workerId: number]: WorkerInfo }>>;
+    setWorkers: (
+      adr: Address,
+      value: { [name: string]: WorkerInfo }
+    ) => Promise<IpcResponse<void>>;
     getBrandConfig: (brand: string) => Promise<IpcResponse<BrandConfig>>;
     getDirectoryInfo: (path: string) => Promise<IpcResponse<DirectoryInfo>>;
     showMsgBox: (

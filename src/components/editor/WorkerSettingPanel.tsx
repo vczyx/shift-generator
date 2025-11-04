@@ -13,9 +13,13 @@ import React, {
 import "../../styles/components/editor/WorkerSettingPanel.css";
 import ShiftF from "../../data/ShiftF";
 import ValueEditComponent from "../ValueEditComponent";
+import { generateNumericId } from "../../utils/util";
 
 interface WorkerSettingPanelProps {
   defaultAddress: Address;
+  editorWinId: number;
+  showNoti: (text: string) => void;
+  onModified: () => void;
 }
 
 export interface WorkerSettingPanelHandles {
@@ -67,7 +71,55 @@ const WorkerSettingPanel = forwardRef<
       const list = Object.keys(res.data).map((v) => Number(v));
       if (list.length > 0) setSelected(list[0]);
     });
-  }, [address]);
+  }, [address, dataInfo]);
+
+  const handleAddWorker = useCallback(() => {
+    let id: number;
+    setWorkersData((prev) => {
+      const arr = { ...prev };
+      id = generateNumericId(Object.keys(arr).map((v) => Number(v)));
+      arr[id] = {
+        name: "새 근무자",
+        joinDate: new Date(),
+        healthCertExpiryDate: new Date(),
+        position: [],
+        role: Object.keys(brandConfig.roles)[0],
+        roleDetail: Object.keys(Object.values(brandConfig.roles)[0].details)[0],
+        fixedShift: undefined,
+        maxWorkTime: 1,
+        minWorkTime: 1,
+        tcCoveragePerHour: 0,
+        workType: "variable",
+      };
+      return arr;
+    });
+    setSelected(id);
+  }, [brandConfig]);
+  const handleRemoveWorker = useCallback(async () => {
+    if (!workersData[selected]) return;
+    const msgRes = await window.electron.showMsgBox(
+      {
+        type: "question",
+        title: "근무자 삭제",
+        message: `${workersData[selected].name}(을)를 정말로 삭제하시겠습니까?`,
+        buttons: ["아니요", "예"],
+      },
+      props.editorWinId
+    );
+    if (msgRes.success && msgRes.data.response === 1) {
+      setWorkersData((prev) => {
+        const arr = { ...prev };
+        delete arr[selected];
+        return arr;
+      });
+    }
+  }, [workersData, selected]);
+  const handleCancel = useCallback(() => setVisible(false), []);
+  const handleSave = useCallback(async () => {
+    const res = await window.electron.setWorkers(address, workersData);
+    setVisible(false);
+    props.onModified();
+  }, [address, workersData]);
 
   const renderAddressCombobox = useCallback(
     (identifier: "brand" | "area" | "restaurant") => {
@@ -85,8 +137,10 @@ const WorkerSettingPanel = forwardRef<
             })
           }
         >
-          {optionsArr[identifier].map((option) => (
-            <option value={option}>{option}</option>
+          {optionsArr[identifier].map((option, i) => (
+            <option key={i} value={option}>
+              {option}
+            </option>
           ))}
         </select>
       );
@@ -105,7 +159,7 @@ const WorkerSettingPanel = forwardRef<
             (selected === Number(wId) ? " workersetpnl-selecteditem" : "")
           }
           onClick={() => setSelected(Number(wId))}
-        >{`[ ${roleData.nickname} ] ${wInfo.name}`}</li>
+        >{`[ ${roleData?.nickname} ] ${wInfo?.name}`}</li>
       );
     });
   }, [brandConfig, workersData, selected]);
@@ -130,10 +184,13 @@ const WorkerSettingPanel = forwardRef<
   const renderWorkerDataValue = useCallback(
     (identifier: keyof WorkerInfo) => {
       const value = workersData[selected][identifier];
-      function setValue<T>(v: T) {
+      function setValue<T>(v: T, ext?: [i: keyof WorkerInfo, v: any][]) {
         setWorkersData((prev) => {
           const res = { ...prev };
           (res[selected][identifier] as T) = v;
+          if (ext) {
+            ext.forEach(([idf, val]) => ((res[selected][idf] as any) = val));
+          }
           return res;
         });
       }
@@ -150,9 +207,9 @@ const WorkerSettingPanel = forwardRef<
         case "position":
           return (
             <ValueEditComponent
-              value={value as string}
+              value={value as string[]}
               setValue={(v) => setValue(v)}
-              type="list"
+              type="multilist"
               list={brandConfig.positions}
             />
           );
@@ -160,7 +217,11 @@ const WorkerSettingPanel = forwardRef<
           return (
             <ValueEditComponent
               value={value as string}
-              setValue={(v) => setValue(v)}
+              setValue={(v) =>
+                setValue(v, [
+                  ["roleDetail", Object.keys(brandConfig.roles[v].details)[0]],
+                ])
+              }
               type="list"
               list={Object.keys(brandConfig.roles)}
             />
@@ -170,10 +231,44 @@ const WorkerSettingPanel = forwardRef<
             brandConfig.roles[workersData[selected].role].details;
           return (
             <ValueEditComponent
-              value={value as string}
-              setValue={(v) => setValue(v)}
+              value={roleData[value as string].nickname}
+              setValue={(v) =>
+                setValue(
+                  Object.entries(roleData)
+                    .filter(([_, value]) => value.nickname === v)
+                    .map(([key, _]) => key)
+                )
+              }
               type="list"
               list={Object.values(roleData).map((v) => v.nickname)}
+            />
+          );
+        case "maxWorkTime":
+        case "minWorkTime":
+          return (
+            <ValueEditComponent
+              value={value as number}
+              setValue={(v) => setValue(v)}
+              type="number"
+              min={1}
+            />
+          );
+        case "tcCoveragePerHour":
+          return (
+            <ValueEditComponent
+              value={value as number}
+              setValue={(v) => setValue(v)}
+              type="number"
+              min={0}
+            />
+          );
+        case "workType":
+          return (
+            <ValueEditComponent
+              value={value === "fixed" ? "고정" : "가변"}
+              setValue={(v) => setValue(v === "고정" ? "fixed" : "variable")}
+              list={["고정", "가변"]}
+              type="list"
             />
           );
         default:
@@ -189,19 +284,6 @@ const WorkerSettingPanel = forwardRef<
     [workersData, selected]
   );
 
-  const renderWorkerDataKeyValue = useCallback(
-    (identifier: keyof WorkerInfo) => {
-      const label = workerDataKeyLabels[identifier];
-      const value = workersData[selected][identifier];
-      return (
-        <tr>
-          <th>{label}</th>
-          <td>{renderWorkerDataValue(identifier)}</td>
-        </tr>
-      );
-    },
-    [workersData, selected, renderWorkerDataValue]
-  );
   const renderWorkerDataSet = useCallback(() => {
     const wInfo = workersData[selected];
     console.log(workersData, selected);
@@ -209,12 +291,15 @@ const WorkerSettingPanel = forwardRef<
 
     return (
       <>
-        {(Object.keys(wInfo) as (keyof WorkerInfo)[]).map((key) =>
-          renderWorkerDataKeyValue(key)
-        )}
+        {(Object.keys(wInfo) as (keyof WorkerInfo)[]).map((key, i) => (
+          <tr key={i}>
+            <th>{workerDataKeyLabels[key]}</th>
+            <td>{renderWorkerDataValue(key)}</td>
+          </tr>
+        ))}
       </>
     );
-  }, [workersData, selected, renderWorkerDataKeyValue]);
+  }, [workersData, selected]);
 
   useImperativeHandle(
     ref,
@@ -250,15 +335,35 @@ const WorkerSettingPanel = forwardRef<
             </tr>
           </table>
           <div className="workersetpnl-workerlisttoolstrip">
-            <div className="button">추가</div>
-            <div className="button">삭제</div>
+            <div className="button" onClick={handleAddWorker}>
+              추가
+            </div>
+            <div className="button" onClick={handleRemoveWorker}>
+              삭제
+            </div>
           </div>
           <div className="workersetpnl-contentwrapper">
             <div className="workersetpnl-workerlistwrapper">
               <ul>{renderWorkerList()}</ul>
             </div>
             <div className="workersetpnl-workerdataset">
-              {renderWorkerDataSet()}
+              <table>{renderWorkerDataSet()}</table>
+            </div>
+          </div>
+          <div className="workersetpnl-footer">
+            <div
+              className="button"
+              style={{ background: "coral" }}
+              onClick={handleCancel}
+            >
+              취소
+            </div>
+            <div
+              className="button"
+              style={{ background: "lightgreen", width: 100 }}
+              onClick={handleSave}
+            >
+              저장
             </div>
           </div>
         </div>

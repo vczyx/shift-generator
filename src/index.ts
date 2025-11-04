@@ -215,6 +215,27 @@ ipcMain.handle(
   ): Promise<IpcResponse<{ [workerId: number]: WorkerInfo }>> =>
     IpcAction(async () => await getWorkers(adr))
 );
+ipcMain.handle(
+  "set-workers",
+  async (
+    _event,
+    adr: Address,
+    value: { [workerId: number]: WorkerInfo }
+  ): Promise<IpcResponse<void>> =>
+    IpcAction(async () => {
+      {
+        const workerPath = await path.join(
+          __dirname,
+          "data",
+          adr.brand,
+          adr.area,
+          adr.restaurant,
+          "workers.json"
+        );
+        await fs.writeFile(workerPath, JSON.stringify(value));
+      }
+    })
+);
 
 ipcMain.handle(
   "get-shift",

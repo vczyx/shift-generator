@@ -69,6 +69,7 @@ const ShiftF = {
    * @returns 직급에 해당하는 Restaurant의 RoleDetail 데이터
    */
   getRoleData: (s: ShiftInformation, w: WorkerInfo): RestaurantRoleConfig => {
+    if (!w) return null;
     return s.brandConfig.roles[w.role].details[w.roleDetail];
   },
 
@@ -147,6 +148,7 @@ const ShiftF = {
    * @returns 근무자의 직급에 대한 그라이언트 색상 정보
    */
   getRoleColorGradient: (s: ShiftInformation, w: WorkerInfo): string => {
+    if (!w) return null;
     const roleData = ShiftF.getRoleData(s, w);
     const c1 = roleData.displayColor1;
     const c2 = roleData.displayColor2 ?? roleData.displayColor1;

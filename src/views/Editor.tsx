@@ -110,6 +110,23 @@ const Editor: React.FC<EditorProps> = (props) => {
     });
   }, []);
 
+  const onModifiedWorkerData = useCallback(async () => {
+    const msgRes = await window.electron.showMsgBox(
+      {
+        type: "question",
+        title: "근무자 인적 사항 변동",
+        message:
+          "근무자 정보가 변경되어 재 시작이 필요합니다. 재 시작 하시겠습니까?",
+        buttons: ["안함", "재 시작"],
+      },
+      getWinId()
+    );
+
+    if (msgRes.success && msgRes.data.response === 1) {
+      open(address);
+    }
+  }, [address]);
+
   useEffect(() => {
     shiftDataRef.current = shiftData;
   }, [shiftData]);
@@ -471,7 +488,13 @@ const Editor: React.FC<EditorProps> = (props) => {
           display={display[mode]}
         />
       )}
-      <WorkerSettingPanel ref={workerSetPnlRef} defaultAddress={address} />
+      <WorkerSettingPanel
+        ref={workerSetPnlRef}
+        defaultAddress={address}
+        editorWinId={getWinId()}
+        showNoti={showNoti}
+        onModified={onModifiedWorkerData}
+      />
       <ContextMenu enabled ref={contextMenuRef} />
       <Notification ref={notiRef} message={notiMsg} time={1000} />
     </>

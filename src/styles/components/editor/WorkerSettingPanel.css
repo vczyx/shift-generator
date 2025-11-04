@@ -32,7 +32,7 @@
 .workersetpnl-workerlistwrapper {
   display: flex;
   flex-direction: column;
-  width: 220px;
+  width: 200px;
 }
 
 .workersetpnl-workerlisttoolstrip {
@@ -63,4 +63,21 @@
   border: 1px solid black;
   flex: 1;
   border-left: none;
+}
+
+.workersetpnl-footer {
+  display: flex;
+}
+.workersetpnl-workerdataset {
+  padding: 10px;
+  overflow-y: scroll;
+}
+.workersetpnl-workerdataset > table > tr > th {
+  text-align: left;
+  width: 200px;
+  height: 30px;
+}
+.workersetpnl-workerdataset > table > tr > td {
+  width: 10;
+  height: 30px;
 }

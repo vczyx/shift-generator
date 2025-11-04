@@ -171,6 +171,7 @@ const ShiftDay = forwardRef<ShiftDayHandle, ShiftDayProps>(
               formatter: (value: any, context: any) => {
                 const label = context.chart.data.labels?.[context.dataIndex];
                 const w = ShiftF.getWorker(shiftInfo, label);
+                if (!w) return "삭제됨";
                 const roleData = ShiftF.getRoleData(shiftInfo, w);
                 const pt = { start: value[0], end: value[1] };
                 return [
