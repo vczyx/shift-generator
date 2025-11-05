@@ -116,7 +116,7 @@ const ShiftWorkerInfo = forwardRef<
       className="editor-shift-workerinfo"
       style={{
         width: "250px",
-        height: show ? "400px" : "0px",
+        height: show ? "300px" : "0px",
         top: position.y,
         left: position.x,
       }}

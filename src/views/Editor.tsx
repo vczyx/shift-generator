@@ -99,9 +99,6 @@ const Editor: React.FC<EditorProps> = (props) => {
       const { width, height } = el.getBoundingClientRect();
 
       if (width > 0 && height > 0) {
-        const winId = parseInt(
-          new URLSearchParams(location.search).get("winId") || "0"
-        );
         window.electron?.setWindowSize(getWinId(), {
           width: Math.round(width),
           height: Math.round(height),
@@ -241,14 +238,11 @@ const Editor: React.FC<EditorProps> = (props) => {
     [address, dirInfo]
   );
 
-  const open = useCallback(
-    async (newAdr: Address) => {
-      exit(shiftData, async () => {
-        await window.electron.openEditor(newAdr);
-      });
-    },
-    [shiftData]
-  );
+  const open = useCallback(async (newAdr: Address) => {
+    exit(shiftDataRef.current, async () => {
+      await window.electron.openEditor(newAdr);
+    });
+  }, []);
 
   const exit = useCallback(
     async (data: Shift, afterSaveCallBack?: () => Promise<void>) => {

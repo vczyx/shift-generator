@@ -175,44 +175,42 @@ const ContextMenu = forwardRef<ContextMenuHandle, ContextMenuProps>(
                 childRender = render(item.child, level + 1);
               }
               return (
-                <>
-                  <li
-                    key={index}
-                    ref={(el) => {
-                      if (
-                        el &&
-                        childRefs.current[level + 1] !== el &&
-                        item.child &&
-                        tmpIndex === index
-                      ) {
-                        childRefs.current[level + 1] = el;
-                      }
-                    }}
-                    className={`contextmenu-item contextmenu-${item.type}`}
-                    onMouseEnter={(e) =>
-                      handleOnMouseEnter(item, level, index, e)
+                <li
+                  key={index}
+                  ref={(el) => {
+                    if (
+                      el &&
+                      childRefs.current[level + 1] !== el &&
+                      item.child &&
+                      tmpIndex === index
+                    ) {
+                      childRefs.current[level + 1] = el;
                     }
-                    onMouseLeave={(e) => handleOnMouseLeave(level, e)}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      item.onClick && item.onClick(e);
-                      if (!item.child) setVisible(false);
-                      else {
-                        handleTimeOut(index);
-                        clearTimeout(timerRef.current);
-                      }
-                    }}
-                  >
-                    <p>{item.caption}</p>
-                    {item.shortInfo && (
-                      <p className="contextmenu-shortinfo">{item.shortInfo}</p>
-                    )}
-                    {item.child &&
-                      childVisible[level + 1] === index &&
-                      render(item.child, level + 1)}
-                  </li>
-                </>
+                  }}
+                  className={`contextmenu-item contextmenu-${item.type}`}
+                  onMouseEnter={(e) =>
+                    handleOnMouseEnter(item, level, index, e)
+                  }
+                  onMouseLeave={(e) => handleOnMouseLeave(level, e)}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    item.onClick && item.onClick(e);
+                    if (!item.child) setVisible(false);
+                    else {
+                      handleTimeOut(index);
+                      clearTimeout(timerRef.current);
+                    }
+                  }}
+                >
+                  <p>{item.caption}</p>
+                  {item.shortInfo && (
+                    <p className="contextmenu-shortinfo">{item.shortInfo}</p>
+                  )}
+                  {item.child &&
+                    childVisible[level + 1] === index &&
+                    render(item.child, level + 1)}
+                </li>
               );
             })}
           </ul>

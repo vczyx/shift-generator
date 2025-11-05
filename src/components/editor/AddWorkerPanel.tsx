@@ -81,8 +81,12 @@ const AddWorkerPanel = forwardRef<AddWorkerPanelHandle, AddWorkerPanelProps>(
                   key={index}
                   className={enabled ? "button" : undefined}
                   style={{
-                    backgroundImage: ShiftF.getRoleColorGradient(shiftInfo, w),
-                    filter: enabled ? undefined : "brightness(0.5)",
+                    backgroundImage: enabled
+                      ? ShiftF.getRoleColorGradient(shiftInfo, w)
+                      : undefined,
+                    backgroundColor: enabled ? undefined : "dimgray",
+                    color: enabled ? undefined : "black",
+                    // filter: enabled ? undefined : "brightness(0.5)",
                   }}
                   onMouseEnter={(e) => {
                     infoRef.current?.handleMouseEnter(e);

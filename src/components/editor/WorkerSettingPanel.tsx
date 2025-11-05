@@ -323,16 +323,20 @@ const WorkerSettingPanel = forwardRef<
         >
           <h2>근무자 인적 정보 설정</h2>
           <table className="workersetpnl-header">
-            <tr className="workersetpnl-header-label">
-              <td>브랜드명</td>
-              <td>지역명</td>
-              <td>매장명</td>
-            </tr>
-            <tr>
-              <td>{renderAddressCombobox("brand")}</td>
-              <td>{renderAddressCombobox("area")}</td>
-              <td>{renderAddressCombobox("restaurant")}</td>
-            </tr>
+            <thead>
+              <tr className="workersetpnl-header-label">
+                <td>브랜드명</td>
+                <td>지역명</td>
+                <td>매장명</td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{renderAddressCombobox("brand")}</td>
+                <td>{renderAddressCombobox("area")}</td>
+                <td>{renderAddressCombobox("restaurant")}</td>
+              </tr>
+            </tbody>
           </table>
           <div className="workersetpnl-workerlisttoolstrip">
             <div className="button" onClick={handleAddWorker}>
@@ -347,7 +351,9 @@ const WorkerSettingPanel = forwardRef<
               <ul>{renderWorkerList()}</ul>
             </div>
             <div className="workersetpnl-workerdataset">
-              <table>{renderWorkerDataSet()}</table>
+              <table>
+                <tbody>{renderWorkerDataSet()}</tbody>
+              </table>
             </div>
           </div>
           <div className="workersetpnl-footer">

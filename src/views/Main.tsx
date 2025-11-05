@@ -29,8 +29,6 @@ const Main: React.FC = () => {
             date,
             shift,
           });
-
-          if (res.success) await window.electron.openDevTool(res.data);
         }}
       >
         Open Editor
